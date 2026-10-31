@@ -11,7 +11,8 @@ Usage:
 
 import sys
 import argparse
-from web_gui import create_web_application
+import gradio as gr
+from web_gui import create_web_application, HEAD_SCRIPT, CUSTOM_CSS
 
 def main():
     parser = argparse.ArgumentParser(description="Cancer Research TME Algorithm Web GUI")
@@ -22,7 +23,7 @@ def main():
 
     print(f"====================================================================")
     print(f" Cancer Research TME Algorithm Workbench (Web GUI)")
-    print(f" Server URL: http://{args.host}:{args.port}")
+    print(f" Server URL: http://{args.host}:{args.port}/?__theme=light")
     print(f" Git Source: https://github.com/natiBirhauz/cancer-research-final-project.git")
     print(f"====================================================================")
 
@@ -31,7 +32,10 @@ def main():
         server_name=args.host,
         server_port=args.port,
         share=args.share,
-        inbrowser=True
+        inbrowser=True,
+        css=CUSTOM_CSS,
+        head=HEAD_SCRIPT,
+        theme=gr.themes.Default(primary_hue="neutral", secondary_hue="neutral", neutral_hue="neutral")
     )
 
 if __name__ == '__main__':

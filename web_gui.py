@@ -1,11 +1,12 @@
 """
 web_gui.py
 ----------
-Simplified, Clean Black & White Web User Interface for the
+Simplified, Clean High-Contrast Web User Interface for the
 Cancer Research TME Surprisal Analysis & Exact Sign Sequence (ES) Platform.
 
 Key Features:
 - 100% English, high-contrast black text on white background (zero color clashes).
+- Forces Light Mode (__theme=light) to prevent OS dark mode conflicts.
 - Direct download of Sample_Input_Template.xlsx format guide.
 - User-supplied dataset ingestion (Excel files, ZIP archive, or directory path).
 - Automated execution generating the 4 master deliverables:
@@ -14,7 +15,7 @@ Key Features:
   3. ES_Combinations.csv
   4. Anchor_Strategies_Comparison.xlsx
   Plus Deliverables_Bundle.zip (consolidated 1-click download).
-- Streamlined interface without heavy preview tables or clutter.
+- Ultra-streamlined interface without clutter or heavy preview tables.
 """
 
 import os
@@ -27,6 +28,107 @@ from pipeline_engine import run_user_pipeline
 TEMPLATE_FILE = "Sample_Input_Template.xlsx"
 if not os.path.exists(TEMPLATE_FILE):
     TEMPLATE_FILE = os.path.join("Docs", "Sample_Input_Template.xlsx")
+
+HEAD_SCRIPT = """
+<script>
+    if (window.location.search.indexOf('__theme=light') === -1) {
+        const url = new URL(window.location);
+        url.searchParams.set('__theme', 'light');
+        window.location.replace(url.href);
+    }
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+    if (document.body) {
+        document.body.classList.remove('dark');
+        document.body.classList.add('light');
+    }
+</script>
+"""
+
+CUSTOM_CSS = """
+/* Global force: pure white background and pure black text across all Gradio elements */
+:root, html, body, .gradio-container, gradio-app, .dark, .light {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    --body-text-color: #000000 !important;
+    --block-label-text-color: #000000 !important;
+    --block-title-text-color: #000000 !important;
+    --body-text-color-subdued: #222222 !important;
+    --background-fill-primary: #FFFFFF !important;
+    --background-fill-secondary: #FFFFFF !important;
+    --block-background-fill: #FFFFFF !important;
+    --border-color-primary: #000000 !important;
+    --input-background-fill: #FFFFFF !important;
+    --input-text-color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Ensure all headers, labels, text, and spans are pure black */
+h1, h2, h3, h4, h5, h6, p, span, label, div, strong, em, b, a {
+    color: #000000 !important;
+}
+
+/* Input textboxes and dropdowns */
+input, textarea, select {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    border-radius: 4px !important;
+}
+
+/* Blocks and containers */
+.block, fieldset, .form {
+    background-color: #FFFFFF !important;
+    border: 1px solid #000000 !important;
+    border-radius: 6px !important;
+}
+
+/* File dropboxes and download buttons */
+.file-preview, .upload-container, .drop-zone, .file-item, .file-item * {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+}
+
+/* Header styling */
+.header-box {
+    background-color: #FFFFFF !important;
+    border: 2px solid #000000 !important;
+    padding: 22px !important;
+    border-radius: 8px !important;
+    margin-bottom: 20px !important;
+}
+.header-title {
+    font-size: 1.8rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 6px 0 !important;
+    color: #000000 !important;
+}
+.header-subtitle {
+    font-size: 1rem !important;
+    color: #222222 !important;
+    margin: 0 !important;
+}
+
+/* High contrast Run button */
+.btn-run {
+    background-color: #000000 !important;
+    color: #FFFFFF !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    border: 2px solid #000000 !important;
+    border-radius: 6px !important;
+    padding: 14px 28px !important;
+    cursor: pointer !important;
+}
+.btn-run * {
+    color: #FFFFFF !important;
+}
+.btn-run:hover {
+    background-color: #222222 !important;
+    color: #FFFFFF !important;
+}
+"""
 
 def execute_pipeline_job(
     uploaded_files,
@@ -51,8 +153,8 @@ def execute_pipeline_job(
 
     if not file_list and not folder_target:
         error_html = """
-        <div style="background-color: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 16px; margin: 15px 0;">
-            <p style="margin: 0; color: #000000; font-weight: bold; font-size: 1rem;">
+        <div style="background: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 16px; margin: 15px 0;">
+            <p style="margin: 0; color: #000000 !important; font-weight: bold; font-size: 1rem;">
                 [ERROR] No dataset provided. Please upload Excel spreadsheet(s), a .zip archive, or enter a valid local directory path.
             </p>
         </div>
@@ -82,52 +184,52 @@ def execute_pipeline_job(
 
         # Build clean Black & White Summary HTML
         summary_html = f"""
-        <div style="background-color: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 18px; margin: 15px 0;">
+        <div style="background: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 18px; margin: 15px 0;">
             <div style="border-bottom: 2px solid #000000; padding-bottom: 8px; margin-bottom: 14px;">
-                <h3 style="margin: 0; color: #000000; font-size: 1.25rem; font-weight: bold;">
+                <h3 style="margin: 0; color: #000000 !important; font-size: 1.25rem; font-weight: bold;">
                     Execution Complete ({summary['duration_sec']} seconds)
                 </h3>
-                <p style="margin: 4px 0 0 0; color: #333333; font-size: 0.9rem;">
+                <p style="margin: 4px 0 0 0; color: #111111 !important; font-size: 0.9rem;">
                     Strategy: <strong>{strategy}</strong> | Cutoff: <strong>|G| &ge; {threshold}</strong>
                 </p>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Cohort Samples</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['total_samples']}</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Cohort Samples</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['total_samples']}</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Total G-Vectors</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['total_g']:,}</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Total G-Vectors</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['total_g']:,}</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Optimal ES Modules</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['es_count']}</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Optimal ES Modules</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['es_count']}</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Universe Coverage</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['coverage_pct']}%</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Universe Coverage</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['coverage_pct']}%</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Kinetic Variance</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['variance_explained_pct']}%</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Kinetic Variance</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['variance_explained_pct']}%</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Mean Optimal R²</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['avg_r2_optimal']:.4f}</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Mean Optimal R²</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['avg_r2_optimal']:.4f}</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Compression Loss (ΔR²)</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['avg_delta_r2']:.4f}</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">Compression Loss (ΔR²)</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['avg_delta_r2']:.4f}</div>
                 </div>
                 <div style="border: 1px solid #000000; padding: 10px; border-radius: 4px; background: #FFFFFF;">
-                    <div style="color: #444444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">High Fidelity Rate</div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000;">{summary['high_fidelity_pct']}%</div>
+                    <div style="color: #444444 !important; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">High Fidelity Rate</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #000000 !important;">{summary['high_fidelity_pct']}%</div>
                 </div>
             </div>
 
-            <p style="margin: 0; color: #000000; font-size: 0.95rem; font-weight: bold;">
+            <p style="margin: 0; color: #000000 !important; font-size: 0.95rem; font-weight: bold;">
                 All 4 master deliverable files and the consolidated ZIP bundle are generated and available for download below.
             </p>
         </div>
@@ -146,75 +248,17 @@ def execute_pipeline_job(
         import traceback
         err_msg = traceback.format_exc()
         error_html = f"""
-        <div style="background-color: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 16px; margin: 15px 0;">
-            <p style="margin: 0 0 8px 0; color: #000000; font-weight: bold; font-size: 1rem;">
+        <div style="background: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 16px; margin: 15px 0;">
+            <p style="margin: 0 0 8px 0; color: #000000 !important; font-weight: bold; font-size: 1rem;">
                 [ERROR] An error occurred during execution:
             </p>
-            <pre style="margin: 0; background: #F3F4F6; color: #000000; padding: 10px; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">{str(e)}\n\n{err_msg}</pre>
+            <pre style="margin: 0; background: #F3F4F6; color: #000000 !important; padding: 10px; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">{str(e)}\n\n{err_msg}</pre>
         </div>
         """
         return error_html, None, None, None, None, None
 
 def build_app():
-    custom_css = """
-    body, .gradio-container {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
-    }
-    label, span, p, h1, h2, h3, h4, h5, h6, strong, div {
-        color: #000000 !important;
-    }
-    input, textarea, select {
-        color: #000000 !important;
-        background-color: #FFFFFF !important;
-        border: 1px solid #000000 !important;
-    }
-    .header-box {
-        background-color: #FFFFFF;
-        border: 2px solid #000000;
-        padding: 24px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    .header-title {
-        font-size: 1.8rem;
-        font-weight: 800;
-        margin: 0 0 6px 0;
-        color: #000000;
-    }
-    .header-subtitle {
-        font-size: 1rem;
-        color: #333333;
-        margin: 0;
-    }
-    .info-card {
-        background-color: #FFFFFF;
-        border: 1px solid #000000;
-        border-radius: 6px;
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-    .btn-run {
-        background-color: #000000 !important;
-        color: #FFFFFF !important;
-        font-size: 1.15rem !important;
-        font-weight: 700 !important;
-        border: 2px solid #000000 !important;
-        border-radius: 6px !important;
-        padding: 14px 28px !important;
-        cursor: pointer !important;
-    }
-    .btn-run * {
-        color: #FFFFFF !important;
-    }
-    .btn-run:hover {
-        background-color: #222222 !important;
-        color: #FFFFFF !important;
-    }
-    """
-
-    with gr.Blocks(title="Cancer Research TME Algorithm Workbench", css=custom_css, theme=gr.themes.Default()) as demo:
+    with gr.Blocks(title="Cancer Research TME Algorithm Workbench") as demo:
         
         # Header Box
         gr.HTML("""
@@ -229,32 +273,32 @@ def build_app():
         # Instruction Guide & Sample Template Section
         with gr.Accordion("📘 Instructions & Format Guide (Click to View)", open=True):
             gr.HTML("""
-            <div class="info-card">
-                <h3 style="margin-top: 0; color: #000000; font-size: 1.15rem; font-weight: bold; border-bottom: 1px solid #000000; padding-bottom: 6px;">
+            <div style="background: #FFFFFF; border: 1px solid #000000; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+                <h3 style="margin-top: 0; color: #000000 !important; font-size: 1.15rem; font-weight: bold; border-bottom: 1px solid #000000; padding-bottom: 6px;">
                     How to Format Your Data Without Errors
                 </h3>
-                <p style="margin: 10px 0; color: #000000; font-size: 0.95rem; line-height: 1.5;">
+                <p style="margin: 10px 0; color: #000000 !important; font-size: 0.95rem; line-height: 1.5;">
                     The algorithm processes single or multiple patient/sample datasets in two standard Excel spreadsheet formats:
                 </p>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0;">
                     <div style="border: 1px solid #000000; padding: 14px; border-radius: 4px; background: #FFFFFF;">
-                        <h4 style="margin: 0 0 6px 0; font-weight: bold; color: #000000;">Format A: Surprisal Matrix Workbooks</h4>
-                        <p style="margin: 0 0 8px 0; font-size: 0.88rem; color: #222222;">An Excel file (<code>.xlsx</code>) containing two sheets:</p>
-                        <ul style="margin: 0; padding-left: 20px; font-size: 0.88rem; color: #000000;">
+                        <h4 style="margin: 0 0 6px 0; font-weight: bold; color: #000000 !important;">Format A: Surprisal Matrix Workbooks</h4>
+                        <p style="margin: 0 0 8px 0; font-size: 0.88rem; color: #111111 !important;">An Excel file (<code>.xlsx</code>) containing two sheets:</p>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 0.88rem; color: #000000 !important;">
                             <li><strong><code>Gvalues</code> Sheet:</strong> Protein loading matrix. Rows = proteins (marker column labeled <code>MARKER</code> or first text column), columns = components <code>G0, G1, G2, ..., Gk</code>.</li>
                             <li><strong><code>Lambavalues</code> Sheet:</strong> Single-cell amplitude matrix. Rows = segmented cells, columns = <code>L0, L1, L2, ..., Lk</code>.</li>
                         </ul>
                     </div>
                     <div style="border: 1px solid #000000; padding: 14px; border-radius: 4px; background: #FFFFFF;">
-                        <h4 style="margin: 0 0 6px 0; font-weight: bold; color: #000000;">Format B: Extracted Tail Protein Tables</h4>
-                        <p style="margin: 0 0 8px 0; font-size: 0.88rem; color: #222222;">An Excel file (<code>.xlsx</code>) containing precomputed tails:</p>
-                        <ul style="margin: 0; padding-left: 20px; font-size: 0.88rem; color: #000000;">
+                        <h4 style="margin: 0 0 6px 0; font-weight: bold; color: #000000 !important;">Format B: Extracted Tail Protein Tables</h4>
+                        <p style="margin: 0 0 8px 0; font-size: 0.88rem; color: #111111 !important;">An Excel file (<code>.xlsx</code>) containing precomputed tails:</p>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 0.88rem; color: #000000 !important;">
                             <li>Columns named <code>G1+, G1-, G2+, G2-, ..., Gk+, Gk-</code>.</li>
                             <li>Lists the proteins overexpressed (<code>+</code>) or repressed (<code>-</code>) in each component.</li>
                         </ul>
                     </div>
                 </div>
-                <p style="margin: 8px 0 0 0; color: #000000; font-size: 0.9rem;">
+                <p style="margin: 8px 0 0 0; color: #000000 !important; font-size: 0.9rem;">
                     <strong>Tip:</strong> Download the pre-formatted Excel template below to inspect the exact structure and column names.
                 </p>
             </div>
@@ -348,7 +392,15 @@ create_web_application = build_app
 
 def main():
     app = build_app()
-    app.launch(server_name="127.0.0.1", server_port=7860, share=False)
+    app.launch(
+        server_name="127.0.0.1",
+        server_port=7860,
+        share=False,
+        inbrowser=True,
+        css=CUSTOM_CSS,
+        head=HEAD_SCRIPT,
+        theme=gr.themes.Default(primary_hue="neutral", secondary_hue="neutral", neutral_hue="neutral")
+    )
 
 if __name__ == '__main__':
     main()
