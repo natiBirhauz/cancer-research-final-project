@@ -1,88 +1,90 @@
 # פרויקט גמר: ניתוח Surprisal Analysis, רצפי סימנים מדויקים (ES) ושחזור R²
 
 מחקר בסביבת המיקרו-סביבה הגידולית (TME) בשיטת Imaging Mass Cytometry (IMC).
-האלגוריתם מוצא קבוצה מינימלית ואופטימלית של **רצפי סימנים מדויקים (Exact Sign Sequences - ES)** המשותפים ל-120 סקשנים רקמתיים (ROIs) מ-19 חולים, המכסים באופן מקסימלי את כלל וקטורי ה-$G$, תוך שימור סימנים מוחלט (`+`/`-`), אפס כפילויות, ושחזור נאמן של המידע המקורי לפי מדד **$R^2$**.
+האלגוריתם מוצא קבוצה מינימלית ואופטימלית של **רצפי סימנים מדויקים (Exact Sign Sequences - ES)** המשותפים ל-120 סקשנים רקמתיים (ROIs) מ-19 חולים (וכן נבחן בהצלחה על דאטאסטים נוספים), המכסים באופן מקסימלי את כלל וקטורי ה-$G$, תוך שימור סימנים מוחלט (`+`/`-`), אפס כפילויות, ושחזור נאמן של המידע המקורי לפי מדד **$R^2$**.
 
 ---
 
-## מבנה התיקייה לאחר ארגון
+## 🖥️ ממשק משתמש אינטראקטיבי (GUI Workbench)
+
+למערכת נבנה ממשק משתמש נגיש ונוח להרצת האלגוריתם על כל דאטא רצוי:
+```bash
+# הרצת ממשק רשת מודרני בדפדפן (Gradio - מומלץ)
+python run_gui.py
+
+# או הרצת ממשק שולחן עבודה מקומי טבעי לחלונות (Tkinter Desktop)
+python run_gui.py --desktop
+```
+הממשק מאפשר:
+1. בחירת דאטאסט: דאטא בחינה נוסף (6 מדגמי חולים), הדאטא המקורי (120 סקשנים), או תיקייה מותאמת אישית.
+2. כוונון פרמטרים (אורך ES מינימלי, סף זנב לסינון רעש, אסטרטגיית עוגן).
+3. מעקב חי בזמן אמת, הצגת טבלאות מודולי ה-ES, מטריצת ההקצאה, ומדדי $R^2$.
+4. הורדה ופתיחה ישירה של קובצי האקסל והדוחות הסופיים בלחיצת כפתור.
+
+---
+
+## 🔬 בחינת האלגוריתם על הדאטאסט הנוסף (`Data for algorithm evaluation`)
+
+ניתן להריץ את סקריפט הבחינה הייעודי על 6 מדגמי החולים הנוספים (47,932 תאים, 10 חלבונים, 54 וקטורי $G$):
+```bash
+python evaluate_algorithm.py
+```
+**תוצאות הבחינה:**
+* **כיסוי מלא של 100%:** 4 מודולי ES בלבד כיסו את כל 54 וקטורי ה-$G$.
+* **אפס סתירות ואפס כפילויות:** שמירה מוחלטת על חוקי ההתאמה הישירה וההפוכה.
+* **דוחות מופקים:** `Docs/Evaluation_Datasets_Report.xlsx` ו-`Docs/Evaluation_Datasets_Report.html`.
+
+---
+
+## 📑 סכמה ומדריך אלגוריתמי מפורט
+
+מסמך הסבר מקיף, ברור ופשוט המסביר את מהלך האלגוריתם מקצה לקצה, הפירוק הפיזיקלי, משמעות הזנבות, נורמליזציה קנונית, האלגוריתם החמדן, ושחזור $R^2$:
+* **סכמה חזותית וקטורית:** `Docs/algorithm_workflow_schema.svg`
+* **מדריך Markdown מלא:** `Docs/Algorithm_Explanation_Guide.md`
+* **דוח HTML אינטראקטיבי:** `Docs/Algorithm_Explanation_Guide.html`
+* **מסמך Word מעוצב:** `Docs/Algorithm_Explanation_Guide.docx`
+
+---
+
+## מבנה התיקייה
 
 ```text
 פרויקט גמר/
+├── run_gui.py                        # משגר ראשי לממשק המשתמש (Web / Desktop)
+├── web_gui.py                        # ממשק רשת אינטראקטיבי (Gradio)
+├── app_gui.py                        # ממשק שולחן עבודה מקומי לחלונות (Tkinter)
+├── pipeline_engine.py                # מנוע חישובי מאוחד להרצת הצינור על כל דאטא
+├── evaluate_algorithm.py             # בחינת האלגוריתם על הדאטאסטים הנוספים
+│
 ├── 01_extract_tail_tables.py        # שלב 1: חילוץ וריכוז טבלאות ה-TAILS מתיקיות החולים
 ├── 02_cache_r2_data.py              # שלב 2: חישוב מקבילי של מטריצות SVD ושונות (Docs/r2_cache.pkl)
 ├── 03_mine_all_es_combinations.py   # שלב 3: כריית כל 120,791 הצירופים מאורך 3 עד 8
 ├── 04_compare_anchor_strategies.py  # שלב 4: השוואת 6 אסטרטגיות עוגן ובחירת המודל המנצח (Hybrid)
 ├── 05_run_winning_pipeline.py       # שלב 5: הפקת הדוחות הסופיים (Optimal_ES_Result_Signs_R2.xlsx)
-├── run_pipeline.py                  # סקריפט ראשי להרצת כל 5 השלבים מקצה לקצה
+├── run_pipeline.py                  # סקריפט ראשי להרצת כל 5 השלבים על הדאטא המקורי
 │
 ├── All_Tail_Proteins_Tables/        # 120 קבצי TAILS עם סימני חלבונים מדויקים (+/-)
 ├── all patients (without isotope)/   # תיקיות המקור הגולמיות של כל חולה (X_raw, G, L)
+├── Data for algorithm evaluation/   # 6 מדגמי חולים נוספים לבחינת האלגוריתם (G ו-L)
 │
 ├── Docs/                            # תיקיית התוצרים והדוחות הפעילים
-│   ├── Algorithm_Full_Summary.html  # דוח אינטראקטיבי מלא ומעוצב
-│   ├── Algorithm_Full_Summary.md    # תיעוד אלגוריתמי מלא ב-Markdown
-│   ├── Optimal_ES_Result_Signs_R2.xlsx # קובץ האקסל המרכזי (8 גיליונות מלאים)
-│   ├── Anchor_Strategies_Comparison.xlsx # השוואת 6 אסטרטגיות עוגן + פירוט 32 המודולים
+│   ├── algorithm_workflow_schema.svg# סכמת זרימה חזותית וקטורית
+│   ├── Algorithm_Explanation_Guide.md # מדריך אלגוריתמי מפורט (Markdown)
+│   ├── Algorithm_Explanation_Guide.html # מדריך מעוצב אינטראקטיבי
+│   ├── Algorithm_Explanation_Guide.docx # מסמך Word מעוצב ומפורט
+│   ├── Evaluation_Datasets_Report.xlsx  # דוח אקסל מלא לבחינת הדאטאסט הנוסף
+│   ├── Evaluation_Datasets_Report.html  # דוח HTML לבחינת הדאטאסט הנוסף
+│   ├── Optimal_ES_Result_Signs_R2.xlsx # קובץ האקסל המרכזי של הדאטא המקורי (8 גיליונות)
+│   ├── Anchor_Strategies_Comparison.xlsx # השוואת 6 אסטרטגיות עוגן
 │   ├── All_Possible_ES_Combinations_From_Length_3.xlsx # כל 120,791 הצירופים (אקסל)
-│   ├── All_Possible_ES_Combinations_From_Length_3.csv  # כל 120,791 הצירופים (CSV)
-│   ├── R2 comparison per ROI.xlsx   # דוח R² נפרד לפי המדריך
-│   ├── winning_hybrid_32_es_detailed.csv # טבלת 32 מודולי ה-ES המנצחים
-│   ├── r2_cache.pkl                 # קובץ זיכרון מטמון למטריצות SVD
-│   └── anchor_comparison_results.pkl# תוצאות השוואת העוגנים
+│   └── r2_cache.pkl                 # זיכרון מטמון למטריצות SVD
 │
-├── Archive_Old_Project/             # ארכיון מסודר של כל הקבצים הישנים שאינם בשימוש
-│   ├── Old_Scripts/                 # 40 סקריפטים ישנים מגרסאות קודמות
-│   ├── Old_Docs/                    # 109 דוחות והרצות היסטוריות ישנות
-│   ├── Old_Directories/             # All_G_Tables, Tails, FinalProject, scratch
-│   └── Old_Root_Files/              # קבצי עזר וטיוטות ישנות
-│
-└── R2 Analysis Guide.html           # מדריך מתודולוגי לחישובי R²
+└── Archive_Old_Project/             # ארכיון מסודר של כל הקבצים הישנים
 ```
 
 ---
 
-## שלבי הצינור החישובי (Pipeline)
-
-ניתן להריץ את הצינור כולו בפקודה אחת:
-```bash
-python run_pipeline.py
-```
-או להריץ כל שלב בנפרד:
-
-### שלב 1: חילוץ טבלאות ה-TAILS
-```bash
-python 01_extract_tail_tables.py
-```
-מרכז את כל 120 קבצי `tail_proteins.xlsx` מתיקיות החולים לתוך `All_Tail_Proteins_Tables/` בפורמט שמי קנוני (`P{X}_ROI_{Y}_tail_proteins.xlsx`).
-
-### שלב 2: חישוב מטריצות SVD ומשקולות שונות (Cache)
-```bash
-python 02_cache_r2_data.py
-```
-מבצע חישוב מקבילי של מטריצות הביטוי, מקדמי התאים $L$, וקטורי $G$, ושחזור $R^2_{full}$ עבור כל 120 הסקשנים. שומר את `Docs/r2_cache.pkl`.
-
-### שלב 3: כריית כלל הצירופים האפשריים החל מאורך 3
-```bash
-python 03_mine_all_es_combinations.py
-```
-מחלץ מתוך 2,778 וקטורי ה-$G$ את כל תתי-הצירופים הקנוניים מאורך 3 עד 8 (120,791 צירופים ייחודיים), ומסווג צירופים שכיחים (המופיעים ב-2 וקטורים ומעלה). מייצא ל-CSV ולאקסל.
-
-### שלב 4: השוואת 6 אסטרטגיות עוגן
-```bash
-python 04_compare_anchor_strategies.py
-```
-מריץ אלגוריתם Greedy Set Cover עם 6 נקודות עוגן שונות (שונות SVD, שכיחות גלובלית, ספציפיות עמוקה 7-8, חדירה חיסונית, סטרומה, ומודל היברידי). שומר את `Docs/Anchor_Strategies_Comparison.xlsx`.
-
-### שלב 5: הרצת המודל המנצח והפקת הדוחות המלאים
-```bash
-python 05_run_winning_pipeline.py
-```
-מריץ את האסטרטגיה ההיברידית (32 מודולים), בונה מטריצת הקצאה נקייה ללא קונפליקטים (0 כפילויות), מחשב $R^2$ לכל סקשן ומייצא את `Docs/Optimal_ES_Result_Signs_R2.xlsx`.
-
----
-
-## תוצאות עיקריות (האסטרטגיה ההיברידית המנצחת)
+## תוצאות עיקריות (האסטרטגיה ההיברידית המנצחת בדאטא המקורי)
 
 * **32 מודולי ES בלבד** (צמצום משמעותי מ-88 מודולים בדוחות ישנים).
 * **כיסוי וקטורי $G$:** **2,776 מתוך 2,778 (99.93%)**.
