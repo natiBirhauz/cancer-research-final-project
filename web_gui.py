@@ -1,59 +1,29 @@
 """
 web_gui.py
 ----------
-Modern Web-based Graphical User Interface for the Cancer Research TME
+Modern Web-based User Interface for the Cancer Research TME
 Surprisal Analysis & Exact Sign Sequence (ES) Mining Platform.
 
-Features:
-- 100% English interface with comprehensive documentation for new users
-- Algorithm engine verified and synced directly with the project Git repository:
-  https://github.com/natiBirhauz/cancer-research-final-project.git
-- Strictly user-provided data ingestion (file upload, zip archive, or folder path)
-- Unbiased anchor strategy selection (zero pre-judgment or historical winners)
-- Real-time progress monitoring, metric cards, interactive result tables, and Excel export
+Fully English, zero Hebrew.
+Provides:
+1. Step-by-step instructions on required file and folder formats.
+2. Clear explanations of all inputs, controls, and scientific metrics.
+3. User-driven dataset loading (single/multiple Excel files, ZIP archive, or directory path).
+4. Automated execution generating the 4 master deliverables:
+   - Optimal_ES_Result.xlsx
+   - Optimal_ES_Result_Signs_R2.xlsx
+   - ES_Combinations.csv
+   - Anchor_Strategies_Comparison.xlsx
+   - Plus Deliverables_Bundle.zip
+5. Interactive preview tables and instant download buttons.
 """
 
 import os
 import sys
 import time
-import subprocess
 import pandas as pd
 import gradio as gr
 from pipeline_engine import run_user_pipeline
-
-GIT_REPO_URL = "https://github.com/natiBirhauz/cancer-research-final-project.git"
-
-def get_git_status():
-    """Retrieves current Git status, commit hash, and branch."""
-    try:
-        commit_hash = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], 
-            text=True, stderr=subprocess.DEVNULL
-        ).strip()
-        branch = subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], 
-            text=True, stderr=subprocess.DEVNULL
-        ).strip()
-        status_msg = f"Connected to Git Repository ({branch} @ {commit_hash})"
-        return status_msg, commit_hash, branch
-    except Exception as e:
-        return "Local Git Repository (Unsynchronized)", "unknown", "main"
-
-def pull_git_algorithm():
-    """Pulls and reloads the latest algorithm version from the Git remote."""
-    try:
-        output = subprocess.check_output(
-            ["git", "pull", "origin", "main"], 
-            text=True, stderr=subprocess.STDOUT
-        ).strip()
-        status_msg, commit, branch = get_git_status()
-        return (
-            f"✅ Git Algorithm Successfully Updated!\n"
-            f"Branch: {branch} | Commit: {commit}\n"
-            f"Remote Output:\n{output}"
-        )
-    except Exception as e:
-        return f"⚠️ Git pull completed with notice: {str(e)}"
 
 def execute_pipeline_job(
     uploaded_files,
@@ -65,8 +35,8 @@ def execute_pipeline_job(
     min_rec,
     progress=gr.Progress(track_tqdm=False)
 ):
-    """Executes the pipeline on user-uploaded datasets."""
-    # Validate user inputs
+    """Executes the pipeline on user-provided datasets and exports the 4 deliverables."""
+    # 1. Parse uploaded files / directory
     file_list = []
     if uploaded_files:
         if isinstance(uploaded_files, list):
@@ -77,312 +47,315 @@ def execute_pipeline_job(
     folder_target = local_folder.strip() if (local_folder and local_folder.strip()) else None
 
     if not file_list and not folder_target:
+        error_html = """
+        <div style="background-color: #FEF2F2; border: 1px solid #F87171; border-radius: 8px; padding: 16px; color: #991B1B; font-weight: 500;">
+            ❌ <strong>Input Error:</strong> No dataset provided. Please upload Excel (.xlsx) file(s), a .zip archive, or specify a valid dataset folder path.
+        </div>
+        """
         return (
-            "<div style='color: #ef4444; font-weight: bold; padding: 15px;'>❌ Error: No dataset provided. Please upload an Excel file, a ZIP archive, or provide a dataset folder path.</div>",
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-            None,
-            "Error: No data inputs detected. Please upload data files to begin."
+            error_html,
+            pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            None, None, None, None, None,
+            "Error: No data inputs detected. Please upload dataset files to proceed."
         )
-
-    # Map strategy key
-    strat_key = 'Hybrid'
-    if 'SVD' in strategy:
-        strat_key = 'SVD_Variance'
-    elif 'Frequency' in strategy:
-        strat_key = 'Max_Frequency'
-    elif 'Deep' in strategy:
-        strat_key = 'Deep_Specificity'
 
     log_history = []
     def progress_callback(pct, msg):
         log_history.append(f"[{time.strftime('%H:%M:%S')}] {msg}")
-        if pct is not None:
+        if progress:
             progress(pct, desc=msg)
 
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    output_run_dir = os.path.join('Docs', f"Run_{timestamp}")
+
     try:
-        summary, df_es, df_matrix, df_r2 = run_user_pipeline(
+        summary, df_es, df_mat, df_r2, df_anc = run_user_pipeline(
             file_paths=file_list if file_list else None,
             folder_path=folder_target,
             min_es_length=int(min_len),
             max_es_length=int(max_len),
             threshold=float(threshold),
+            min_overlap=2,
             min_g_recurrence=int(min_rec),
-            strategy=strat_key,
+            strategy=strategy,
+            output_dir=output_run_dir,
             progress_callback=progress_callback
         )
-    except Exception as e:
-        err = f"Pipeline Execution Error: {str(e)}"
-        log_history.append(err)
+
+        # Build Summary Card HTML
+        summary_html = f"""
+        <div style="background-color: #F0FDF4; border: 1px solid #86EFAC; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #BBF7D0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #166534; font-size: 1.25rem;">✅ Analysis Completed Successfully in {summary['duration_sec']}s</h3>
+                <span style="background-color: #DCFCE7; color: #15803D; padding: 4px 12px; border-radius: 9999px; font-weight: 600; font-size: 0.85rem;">
+                    Strategy: {strategy}
+                </span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Cohort Samples</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #0F172A;">{summary['total_samples']}</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">G-Vectors Ingested</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #0F172A;">{summary['total_g']:,}</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Optimal ES Modules</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #2563EB;">{summary['es_count']}</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Universe Coverage</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #16A34A;">{summary['coverage_pct']}%</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Kinetic Variance</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #9333EA;">{summary['variance_explained_pct']}%</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Mean Optimal R²</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #D97706;">{summary['avg_r2_optimal']:.4f}</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Mean Compression Loss (ΔR²)</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #475569;">{summary['avg_delta_r2']:.4f}</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                    <div style="color: #64748B; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">High Fidelity Rate</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">{summary['high_fidelity_pct']}%</div>
+                </div>
+            </div>
+            <p style="margin: 15px 0 0 0; color: #15803D; font-size: 0.9rem;">
+                All 4 master deliverable files and the consolidated ZIP archive are ready for download below.
+            </p>
+        </div>
+        """
+
         return (
-            f"<div style='color: #ef4444; font-weight: bold; padding: 15px;'>❌ {err}</div>",
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.DataFrame(),
-            None,
+            summary_html,
+            df_es,
+            df_mat,
+            df_r2,
+            df_anc,
+            summary['opt_es_result_path'],
+            summary['opt_signs_r2_path'],
+            summary['es_combinations_csv_path'],
+            summary['anchor_xlsx_path'],
+            summary['zip_bundle_path'],
             "\n".join(log_history)
         )
 
-    # Build metric summary card
-    summary_card_html = f"""
-    <div style="background: #0f172a; color: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 20px; border-left: 6px solid #3b82f6;">
-        <h2 style="margin: 0 0 16px 0; color: #60a5fa; font-size: 1.35em;">Analysis Completed Successfully</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; text-align: center;">
-            <div style="background: #1e293b; padding: 14px; border-radius: 8px;">
-                <div style="font-size: 1.8em; font-weight: bold; color: #38bdf8;">{summary['total_samples']}</div>
-                <div style="font-size: 0.8em; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Analyzed Samples</div>
-            </div>
-            <div style="background: #1e293b; padding: 14px; border-radius: 8px;">
-                <div style="font-size: 1.8em; font-weight: bold; color: #38bdf8;">{summary['total_g']:,}</div>
-                <div style="font-size: 0.8em; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Total G-Vectors</div>
-            </div>
-            <div style="background: #1e293b; padding: 14px; border-radius: 8px;">
-                <div style="font-size: 1.8em; font-weight: bold; color: #34d399;">{summary['es_count']}</div>
-                <div style="font-size: 0.8em; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Discovered ES Modules</div>
-            </div>
-            <div style="background: #1e293b; padding: 14px; border-radius: 8px;">
-                <div style="font-size: 1.8em; font-weight: bold; color: #34d399;">{summary['coverage_pct']}%</div>
-                <div style="font-size: 0.8em; text-transform: uppercase; color: #94a3b8; font-weight: 600;">G-Vector Coverage</div>
-            </div>
-            <div style="background: #1e293b; padding: 14px; border-radius: 8px;">
-                <div style="font-size: 1.8em; font-weight: bold; color: #fbbf24;">{summary['variance_explained_pct']}%</div>
-                <div style="font-size: 0.8em; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Variance Captured</div>
-            </div>
-            <div style="background: #1e293b; padding: 14px; border-radius: 8px;">
-                <div style="font-size: 1.8em; font-weight: bold; color: #a78bfa;">{summary['avg_r2_optimal']}</div>
-                <div style="font-size: 0.8em; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Mean R² Optimal</div>
-            </div>
+    except Exception as e:
+        import traceback
+        err_detail = traceback.format_exc()
+        error_html = f"""
+        <div style="background-color: #FEF2F2; border: 1px solid #F87171; border-radius: 8px; padding: 16px; color: #991B1B;">
+            <h4 style="margin: 0 0 8px 0;">❌ Pipeline Execution Error</h4>
+            <p style="margin: 0; font-family: monospace; font-size: 0.85rem;">{str(e)}</p>
         </div>
-        <div style="margin-top: 14px; font-size: 0.9em; color: #94a3b8;">
-            Elapsed Time: <strong>{summary['duration_sec']}s</strong> | Master Excel Report: <code>{summary['excel_path']}</code>
-        </div>
-    </div>
+        """
+        return (
+            error_html,
+            pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            None, None, None, None, None,
+            f"Error during execution:\n{err_detail}"
+        )
+
+def build_app():
+    custom_css = """
+    .gradio-container { max-width: 1300px !important; margin: auto !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    .header-box { background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: white; padding: 28px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .header-title { font-size: 1.85rem; font-weight: 700; margin: 0 0 8px 0; color: #F8FAFC; }
+    .header-subtitle { font-size: 0.95rem; color: #94A3B8; margin: 0; line-height: 1.5; }
+    .info-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .section-title { font-size: 1.15rem; font-weight: 600; color: #1E293B; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px; }
+    .btn-run { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important; color: white !important; font-size: 1.05rem !important; font-weight: 600 !important; border-radius: 8px !important; padding: 12px 24px !important; box-shadow: 0 2px 6px rgba(37,99,235,0.3) !important; }
+    .btn-run:hover { background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important; }
+    .code-block { background: #0F172A; color: #38BDF8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; }
     """
 
-    return (
-        summary_card_html,
-        df_es,
-        df_matrix,
-        df_r2,
-        summary['excel_path'],
-        "\n".join(log_history)
-    )
+    with gr.Blocks(title="Cancer Research TME Pipeline", css=custom_css, theme=gr.themes.Default(primary_hue="blue")) as demo:
+        
+        # Header Box
+        gr.HTML("""
+        <div class="header-box">
+            <h1 class="header-title">Cancer Research: Tumor Microenvironment (TME) Analysis Platform</h1>
+            <p class="header-subtitle">
+                Surprisal Analysis Matrix Ingestion &bull; Combinatorial Exact Sign Sequence (ES) Mining &bull; Greedy Multi-Anchor Set Cover &bull; Single-Cell Reconstruction (R²)
+            </p>
+        </div>
+        """)
 
-def create_web_application():
-    initial_git_status, commit_hash, branch = get_git_status()
+        # User Guide Accordion
+        with gr.Accordion("📘 Complete User Manual: Input File Formats, Scientific Methodology & Metric Definitions", open=True):
+            gr.HTML("""
+            <div class="info-card">
+                <h3 class="section-title">1. Expected Dataset Formats & Directory Layout</h3>
+                <p style="margin-top: 0; color: #334155; line-height: 1.6;">
+                    The platform automatically detects and ingests two standard scientific data formats. You can upload individual files, multiple files simultaneously, a compressed <code>.zip</code> archive, or provide a local folder path:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px;">
+                    <div style="background: white; border: 1px solid #CBD5E1; border-radius: 8px; padding: 16px;">
+                        <h4 style="margin: 0 0 8px 0; color: #0F172A;">Format A: Surprisal Analysis Spreadsheets (Matrix Format)</h4>
+                        <p style="font-size: 0.88rem; color: #475569; margin: 0 0 10px 0;">
+                            An Excel workbook (<code>.xlsx</code>) containing two specific sheets:
+                        </p>
+                        <ul style="font-size: 0.85rem; color: #334155; margin: 0 0 10px 0; padding-left: 20px;">
+                            <li><strong><code>Gvalues</code> Sheet:</strong> Protein loading matrix where rows represent proteins and columns represent biological components (<code>G0, G1, ..., Gk</code>). One column must contain protein names (e.g. <code>MARKER</code> or first text column).</li>
+                            <li><strong><code>Lambavalues</code> Sheet:</strong> Single-cell amplitude matrix where rows represent cells and columns represent amplitude weights (<code>L0, L1, ..., Lk</code>).</li>
+                        </ul>
+                        <div style="font-size: 0.8rem; background: #F1F5F9; padding: 8px; border-radius: 4px; color: #0F172A;">
+                            <em>Example: Clinical PDE data files with <code>Gvalues</code> and <code>Lambavalues</code>.</em>
+                        </div>
+                    </div>
+                    <div style="background: white; border: 1px solid #CBD5E1; border-radius: 8px; padding: 16px;">
+                        <h4 style="margin: 0 0 8px 0; color: #0F172A;">Format B: Tail Proteins Spreadsheets (Extracted Tails)</h4>
+                        <p style="font-size: 0.88rem; color: #475569; margin: 0 0 10px 0;">
+                            An Excel workbook (<code>.xlsx</code>) containing pre-extracted protein tails:
+                        </p>
+                        <ul style="font-size: 0.85rem; color: #334155; margin: 0 0 10px 0; padding-left: 20px;">
+                            <li>Columns formatted as <code>G1+, G1-, G2+, G2-, ..., Gk+, Gk-</code>.</li>
+                            <li>Under each column, list the protein names classified as significantly over-expressed (<code>+</code>) or under-expressed (<code>-</code>) in that component.</li>
+                        </ul>
+                        <div style="font-size: 0.8rem; background: #F1F5F9; padding: 8px; border-radius: 4px; color: #0F172A;">
+                            <em>Example: <code>ROI_XX_tail_proteins.xlsx</code> tables from IMC cohorts.</em>
+                        </div>
+                    </div>
+                </div>
 
-    custom_theme = gr.themes.Soft(
-        primary_hue="blue",
-        secondary_hue="slate",
-        font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"]
-    )
+                <h3 class="section-title">2. Scientific Metrics & Optimization Objectives</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; font-size: 0.88rem; color: #334155;">
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        <strong>Exact Sign Sequence (ES):</strong> A coordinated multi-protein signature with strict directional signs (e.g., <code>CKIT(+) | EGFR(+) | IGFR(+)</code>). Captures co-functional protein complexes without sign contradictions.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        <strong>Universe G Coverage:</strong> The cumulative percentage of all microenvironment states (G-vectors) matched by the selected set of ES modules with zero sign errors.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        <strong>Kinetic Variance Explained:</strong> The proportion of the total physical deviation energy &Sigma;(L<sub>k</sub>)<sup>2</sup> accounted for by the components selected in the optimal cover.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        <strong>Reconstruction Fidelity (R²):</strong> Measure of single-cell expression matrix reconstruction quality. <code>R²_full</code> is the baseline across all components; <code>R²_optimal</code> is the reconstructed quality from the compact ES set.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        <strong>Compression Penalty (&Delta;R²):</strong> Information loss incurred by data compression: &Delta;R² = R²_full - R²_optimal. Loss &lt; 0.05 indicates high-fidelity preservation.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        <strong>Conflict-Free Allocation Matrix:</strong> A strict 1-to-1 disjoint assignment ensuring no single biological G-vector is counted multiple times across ES modules.
+                    </div>
+                </div>
+            </div>
+            """)
 
-    with gr.Blocks(title="Cancer Research TME Algorithm Workbench") as app:
-        # Header Section
-        gr.Markdown(
-            f"""
-            # 🔬 Cancer Research TME Algorithm Workbench
-            ### Surprisal Analysis, Exact Sign Sequences (ES) Mining & Single-Cell R² Reconstruction
-            **Algorithm Source Repository:** [`{GIT_REPO_URL}`]({GIT_REPO_URL})
-            """
-        )
-
-        # Git Algorithm Sync Banner
+        # Data Ingestion & Controls Section
         with gr.Row():
             with gr.Column(scale=3):
-                git_status_box = gr.Markdown(
-                    f"**Algorithm Git Status:** `{initial_git_status}` | Repository Branch: `{branch}`"
-                )
-            with gr.Column(scale=1):
-                pull_git_btn = gr.Button("🔄 Pull Latest Algorithm from Git", size="sm", variant="secondary")
-
-        git_pull_output = gr.Textbox(label="Git Sync Details", visible=False, lines=3)
-
-        pull_git_btn.click(
-            pull_git_algorithm,
-            outputs=[git_pull_output]
-        ).then(
-            lambda: gr.update(visible=True),
-            outputs=[git_pull_output]
-        )
-
-        with gr.Row():
-            # Left Column: User Input & Parameter Settings
-            with gr.Column(scale=1):
-                gr.Markdown("### 1. Upload Dataset Files")
-                gr.Markdown(
-                    "Upload your experimental data spreadsheets. You may upload one or multiple `.xlsx` files, or a `.zip` archive containing your dataset folders."
-                )
-                
+                gr.Markdown("### 1. Ingest Dataset Files")
                 upload_input = gr.File(
-                    label="Upload Dataset File(s) / ZIP Archive",
+                    label="Upload Dataset Files (.xlsx spreadsheets or .zip archive)",
                     file_count="multiple",
                     file_types=[".xlsx", ".xls", ".zip"]
                 )
-
-                local_path_input = gr.Textbox(
-                    label="Or Provide Local Directory Path (Optional)",
-                    placeholder="e.g. C:/path/to/my_cohort_data",
-                    info="Specify a local filesystem path containing your dataset files."
+                folder_input = gr.Textbox(
+                    label="Or Specify Dataset Directory Path (Local folder on disk)",
+                    placeholder="e.g., C:/Projects/Cancer_TME_Data/PDE_Cohort",
+                    lines=1
                 )
 
-                gr.Markdown("### 2. Execution Parameters")
-                
-                strategy_selector = gr.Dropdown(
-                    label="Anchor & Objective Strategy",
-                    choices=[
-                        "Hybrid Multi-Objective (Variance x √Count)",
-                        "SVD Variance Driver",
-                        "Max Frequency (Universality)",
-                        "Deep Specificity (Higher-Order Core)"
-                    ],
-                    value="Hybrid Multi-Objective (Variance x √Count)",
-                    info="Objective function driving greedy sequence selection."
-                )
-
-                with gr.Accordion("Advanced Hyperparameters", open=False):
-                    slider_min_len = gr.Slider(
-                        minimum=2, maximum=6, value=3, step=1, 
-                        label="Minimum ES Sequence Length",
-                        info="Minimum number of proteins required to form a valid biological module."
-                    )
-                    slider_max_len = gr.Slider(
-                        minimum=4, maximum=10, value=8, step=1, 
-                        label="Maximum ES Sequence Length",
-                        info="Maximum sequence length mined during combinatorial exploration."
-                    )
-                    slider_threshold = gr.Slider(
-                        minimum=0.00, maximum=0.25, value=0.05, step=0.01, 
-                        label="Tail Protein Cutoff Threshold (|G|)",
-                        info="Filters background noise; proteins with |G| below threshold are excluded from driver tails."
-                    )
-                    slider_min_rec = gr.Slider(
-                        minimum=1, maximum=10, value=2, step=1, 
-                        label="Minimum G-Vector Recurrence (2+ Gs)",
-                        info="Excludes singleton patterns that appear in only 1 G-vector to ensure biological reproducibility."
-                    )
-
-                run_pipeline_btn = gr.Button(
-                    "🚀 Run Algorithm on Uploaded Data", 
-                    variant="primary", 
-                    size="lg"
-                )
-
-            # Right Column: Interactive Results, Tables & Master Deliverables
             with gr.Column(scale=2):
-                gr.Markdown("### 3. Pipeline Execution Results")
-                summary_banner = gr.HTML(
-                    "<div style='padding: 24px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; text-align: center;'>"
-                    "Upload your dataset on the left and click <strong>'Run Algorithm on Uploaded Data'</strong> to generate deliverables."
-                    "</div>"
+                gr.Markdown("### 2. Execution Parameters")
+                strategy_select = gr.Dropdown(
+                    label="Primary Optimization Anchor Strategy",
+                    choices=[
+                        "Hybrid Multi-Objective (Variance x Count)",
+                        "SVD Variance Driver",
+                        "Max Frequency / Universality",
+                        "Deep Specificity",
+                        "Biological Hallmark (Seed Co-expression)"
+                    ],
+                    value="Hybrid Multi-Objective (Variance x Count)",
+                    info="Mathematical objective used by the Greedy Set Cover solver."
                 )
 
-                with gr.Tabs():
-                    with gr.TabItem("📋 Discovered ES Modules"):
-                        gr.Markdown("#### Canonical Exact Sign Sequences Selected by the Algorithm")
-                        es_dataframe = gr.Dataframe(
-                            headers=['ES_ID', 'Length', 'Exact_Sign_Sequence', 'G_Covered', 'Variance_Gain', 'Cum_Coverage_Pct'],
-                            label="Selected Modules (Signs preserved: '+' indicates upregulation, '-' indicates downregulation)"
-                        )
+                with gr.Row():
+                    min_len_input = gr.Slider(minimum=3, maximum=6, value=3, step=1, label="Min Sequence Length")
+                    max_len_input = gr.Slider(minimum=4, maximum=10, value=8, step=1, label="Max Sequence Length")
 
-                    with gr.TabItem("🧩 Conflict-Free Allocation Matrix"):
-                        gr.Markdown("#### Disjoint Sample-to-Module Allocation Matrix (0 Row Duplicates)")
-                        matrix_dataframe = gr.Dataframe(
-                            label="Allocation Matrix (Each sample cell contains at most one assigned G-vector)"
-                        )
+                with gr.Row():
+                    threshold_input = gr.Slider(minimum=0.01, maximum=0.20, value=0.05, step=0.01, label="Cutoff Loading (|G|)")
+                    min_rec_input = gr.Slider(minimum=1, maximum=5, value=2, step=1, label="Min G Recurrence")
 
-                    with gr.TabItem("📈 Cell-Level R² Reconstruction"):
-                        gr.Markdown("#### Determination Coefficient (R²) & Information Preservation Per Sample")
-                        r2_dataframe = gr.Dataframe(
-                            headers=['Sample', 'Cells', 'Selected_G_Count', 'Selected_Gs', 'R2_full', 'R2_optimal', 'Delta_R2', 'Status'],
-                            label="Single-Cell Reconstruction Fidelity"
-                        )
+        # Action Button
+        run_btn = gr.Button("🚀 Run Algorithm & Generate 4 Master Deliverables", variant="primary", elem_classes=["btn-run"])
 
-                    with gr.TabItem("💾 Download Deliverables"):
-                        gr.Markdown("#### Master Excel Report Download")
-                        gr.Markdown("Download the complete multi-sheet spreadsheet containing all modules, matrices, and R² scores:")
-                        excel_download = gr.File(label="Download Master Report (.xlsx)")
+        # Results & Summary Area
+        summary_display = gr.HTML()
 
-                    with gr.TabItem("📜 Live Log & Diagnostics"):
-                        gr.Markdown("#### Computational Pipeline Diagnostic Log")
-                        log_textbox = gr.Textbox(label="Execution Trace", lines=12, max_lines=25)
+        # Master Deliverables Download Box
+        with gr.Accordion("📥 Download Master Deliverable Files", open=True):
+            gr.Markdown("#### Direct 1-Click File Downloads:")
+            with gr.Row():
+                dl_opt_es = gr.File(label="1. Optimal_ES_Result.xlsx")
+                dl_opt_r2 = gr.File(label="2. Optimal_ES_Result_Signs_R2.xlsx")
+                dl_combos = gr.File(label="3. ES_Combinations.csv")
+                dl_anchors = gr.File(label="4. Anchor_Strategies_Comparison.xlsx")
+                dl_zip = gr.File(label="📦 Download All (Deliverables_Bundle.zip)")
 
-                    with gr.TabItem("📖 User Guide & File Specifications"):
-                        gr.Markdown(
-                            r"""
-                            ## Complete User Guide & Input File Specifications
+        # Result Preview Tabs
+        with gr.Tabs():
+            with gr.TabItem("📊 Selected Optimal ES Modules"):
+                gr.Markdown("#### Ranked Exact Sign Sequence (ES) Modules Covering the Cohort")
+                es_table = gr.DataFrame(headers=["Rank", "ES_ID", "Length", "New_Gs_Covered", "Direct (+)", "Inverse (-)", "Cumulative_Gs", "Coverage_%", "Exact_Sign_Sequence"])
 
-                            ### 1. Supported Input File Formats
-                            The algorithm accepts experimental proteomic or single-cell imaging data in two standard formats:
+            with gr.TabItem("🧩 Conflict-Free Allocation Matrix"):
+                gr.Markdown("#### 100% Disjoint Sample &times; ES Allocation Matrix (Zero Duplicate Gs)")
+                mat_table = gr.DataFrame()
 
-                            #### Format A: Surprisal Analysis Matrices (Recommended)
-                            An Excel workbook (`.xlsx`) containing two sheets:
-                            * **Sheet 1: `Gvalues`**
-                              * Orthonormal basis vectors from Surprisal Analysis / Singular Value Decomposition (SVD).
-                              * Columns: `G0` (equilibrium baseline), `G1`, `G2`, ..., `Gk` (biological deviation processes).
-                              * Rows: Protein marker names and their eigenvector coefficients for each process.
-                            * **Sheet 2: `Lambavalues`**
-                              * Single-cell amplitude coefficients.
-                              * Columns: `L0`, `L1`, `L2`, ..., `Lk` (amplitudes corresponding to each G-vector).
-                              * Rows: Individual cells (each row represents one cell's amplitude coordinates).
+            with gr.TabItem("🎯 Reconstruction Fidelity (R²)"):
+                gr.Markdown("#### Single-Cell Expression Matrix Reconstruction & Compression Loss (&Delta;R²)")
+                r2_table = gr.DataFrame()
 
-                            #### Format B: Precomputed Tail Protein Spreadsheets
-                            An Excel file (`.xlsx`) with driver tail columns:
-                            * Columns named `G1+`, `G1-`, `G2+`, `G2-`, etc.
-                            * Each column lists the specific proteins exhibiting positive (`+`) or negative (`-`) deviations in that process.
+            with gr.TabItem("⚖️ Anchor Strategies Comparison"):
+                gr.Markdown("#### Benchmark Overview Across 6 Greedy Anchor Strategies")
+                anc_table = gr.DataFrame()
 
-                            ---
+            with gr.TabItem("📋 Execution Console Log"):
+                log_box = gr.Textbox(label="Step-by-Step Processing Logs", lines=10, max_lines=25)
 
-                            ### 2. Explanation of Controls & Hyperparameters
-                            * **Upload Dataset File(s) / ZIP Archive:** Upload your raw `.xlsx` files or a `.zip` containing subfolders.
-                            * **Anchor & Objective Strategy:**
-                              * **Hybrid Multi-Objective:** Jointly balances biological variance $\sum w(g)$ and population prevalence $\sqrt{Count}$.
-                              * **SVD Variance Driver:** Prioritizes physical energy and variance capture without weighting sample counts.
-                              * **Max Frequency (Universality):** Prioritizes universal patterns appearing across the highest number of vectors.
-                              * **Deep Specificity:** Prioritizes longer, higher-order protein combinations (lengths 5 to 8).
-                            * **Minimum / Maximum ES Sequence Length:** Constrains the combinatorial size of protein sets (default: lengths 3 to 8).
-                            * **Tail Cutoff Threshold (|G|):** Filters low-amplitude protein coefficients to remove background noise (default: 0.05).
-                            * **Minimum G-Vector Recurrence (2+ Gs):** Excludes singletons (patterns appearing in only 1 vector) to focus strictly on reproducible biological phenomena.
-
-                            ---
-
-                            ### 3. Explanation of Performance Metrics
-                            * **Exact Sign Sequence (ES):** A coordinated set of proteins where each protein has an exact sign (`+` for upregulation, `-` for downregulation).
-                            * **Canonical Representation ($ES \equiv -ES$):** Because eigenvectors are invariant to sign inversion ($G \times L^T = (-G) \times (-L)^T$), inverted profiles represent the exact same physical pathway. Canonical indexing ensures zero redundant duplicates.
-                            * **Disjoint Allocation:** Once a G-vector is covered by a module, it cannot be assigned to another module, guaranteeing 100% disjoint partitioning.
-                            * **$R^2_{full}$ (Baseline):** The determination coefficient achieved when using all available components.
-                            * **$R^2_{optimal}$ (Compressed Representation):** The determination coefficient achieved using only the baseline equilibrium ($G_0, L_0$) plus the selected ES modules.
-                            * **Compression Penalty ($\Delta R^2 = R^2_{full} - R^2_{optimal}$):** Measures the information loss due to dimensionality reduction. Values below $0.05$ indicate high fidelity.
-                            """
-                        )
-
-        # Bind Run Execution
-        run_pipeline_btn.click(
-            execute_pipeline_job,
+        # Connect callback
+        run_btn.click(
+            fn=execute_pipeline_job,
             inputs=[
                 upload_input,
-                local_path_input,
-                strategy_selector,
-                slider_min_len,
-                slider_max_len,
-                slider_threshold,
-                slider_min_rec
+                folder_input,
+                strategy_select,
+                min_len_input,
+                max_len_input,
+                threshold_input,
+                min_rec_input
             ],
             outputs=[
-                summary_banner,
-                es_dataframe,
-                matrix_dataframe,
-                r2_dataframe,
-                excel_download,
-                log_textbox
+                summary_display,
+                es_table,
+                mat_table,
+                r2_table,
+                anc_table,
+                dl_opt_es,
+                dl_opt_r2,
+                dl_combos,
+                dl_anchors,
+                dl_zip,
+                log_box
             ]
         )
 
-    return app
+    return demo
+
+def main():
+    app = build_app()
+    app.launch(server_name="127.0.0.1", server_port=7860, share=False)
+
+create_web_application = build_app
 
 if __name__ == '__main__':
-    port = 7860
-    print(f"Launching Cancer Research TME Algorithm Web GUI on http://127.0.0.1:{port}...")
-    app = create_web_application()
-    app.launch(server_name="127.0.0.1", server_port=port, inbrowser=True)
+    main()

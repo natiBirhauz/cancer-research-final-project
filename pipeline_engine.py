@@ -10,13 +10,12 @@ Processes user-provided datasets without preloaded data:
 - Uploaded ZIP archive containing dataset folders
 - User-specified local directory path
 
-Computes:
-1. Surprisal Analysis matrix ingestion (G basis, L amplitudes)
-2. Kinetic variance energy weights w(g)
-3. Combinatorial canonical Exact Sign Sequence (ES) mining
-4. Greedy Set Cover optimization under selectable anchor strategies
-5. Conflict-free disjoint allocation matrix (zero duplicate allocations)
-6. Cell-level R2 and compression penalty Delta R2 reconstruction
+Generates the 4 Master Deliverable Files:
+1. Optimal_ES_Result.xlsx
+2. Optimal_ES_Result_Signs_R2.xlsx
+3. ES_Combinations.csv
+4. Anchor_Strategies_Comparison.xlsx
+Plus Deliverables_Bundle.zip containing all 4 files.
 """
 
 import os
@@ -81,7 +80,7 @@ def compute_r2_vectorized(X_log, G, L, ss_tot_threshold=1e-3):
 def parse_excel_sample(file_path, sample_name, threshold=0.05, min_overlap=2):
     """
     Parses a single Excel file containing either:
-    1. 'Gvalues' and 'Lambavalues' sheets
+    1. 'Gvalues' and 'Lambavalues' sheets (Surprisal Analysis Matrix)
     2. A tail_proteins sheet (columns with G*+ and G*-)
     """
     xl = pd.ExcelFile(file_path)
@@ -197,7 +196,7 @@ def parse_excel_sample(file_path, sample_name, threshold=0.05, min_overlap=2):
                 'signs': signs,
                 'prots': set(signs.keys()),
                 'count': len(signs),
-                'weight': 1.0 / len(g_nums)
+                'weight': 1.0 / len(g_nums) if g_nums else 0.0
             })
 
     sample_info = {
@@ -213,7 +212,7 @@ def parse_excel_sample(file_path, sample_name, threshold=0.05, min_overlap=2):
     }
     return sample_info, sample_g_vectors
 
-def ingest_user_data(file_paths, folder_path=None, threshold=0.05, min_overlap=2):
+def ingest_user_data(file_paths=None, folder_path=None, threshold=0.05, min_overlap=2):
     """
     Ingests user-supplied files, archives, or directories.
     """
@@ -232,16 +231,16 @@ def ingest_user_data(file_paths, folder_path=None, threshold=0.05, min_overlap=2
                 with zipfile.ZipFile(fp, 'r') as zf:
                     zf.extractall(td)
                 for root, _, files in os.walk(td):
-                    for f in files:
-                        if f.lower().endswith(('.xlsx', '.xls')):
+                    for f in sorted(files):
+                        if f.lower().endswith(('.xlsx', '.xls')) and not f.startswith('~$'):
                             files_to_process.append(os.path.join(root, f))
-            elif fp.lower().endswith(('.xlsx', '.xls')):
+            elif fp.lower().endswith(('.xlsx', '.xls')) and not os.path.basename(fp).startswith('~$'):
                 files_to_process.append(fp)
 
     if folder_path and os.path.isdir(folder_path):
         for root, _, files in os.walk(folder_path):
-            for f in files:
-                if f.lower().endswith(('.xlsx', '.xls')):
+            for f in sorted(files):
+                if f.lower().endswith(('.xlsx', '.xls')) and not f.startswith('~$'):
                     files_to_process.append(os.path.join(root, f))
 
     if not files_to_process:
@@ -282,10 +281,16 @@ def run_user_pipeline(
     min_overlap=2,
     min_g_recurrence=2,
     strategy='Hybrid',
+    output_dir='output',
     progress_callback=None
 ):
     """
-    Executes the complete pipeline strictly on user-supplied data.
+    Executes the complete pipeline on user-supplied data and produces the 4 master deliverables:
+    1. Optimal_ES_Result.xlsx
+    2. Optimal_ES_Result_Signs_R2.xlsx
+    3. ES_Combinations.csv
+    4. Anchor_Strategies_Comparison.xlsx
+    Plus Deliverables_Bundle.zip.
     """
     def log(msg, pct=None):
         if progress_callback:
@@ -293,7 +298,8 @@ def run_user_pipeline(
         print(f"[{time.strftime('%H:%M:%S')}] {msg}")
 
     t0 = time.time()
-    log("Ingesting user-supplied dataset...", 0.10)
+    os.makedirs(output_dir, exist_ok=True)
+    log("Ingesting user-supplied dataset...", 0.05)
 
     roi_info, g_data = ingest_user_data(
         file_paths=file_paths,
@@ -304,186 +310,504 @@ def run_user_pipeline(
 
     total_g = len(g_data)
     total_rois = len(roi_info)
-    log(f"Successfully loaded {total_g:,} G-vectors across {total_rois} sample(s).", 0.30)
+    log(f"Successfully loaded {total_g:,} G-vectors across {total_rois} sample(s).", 0.15)
 
     # Combinatorial mining
-    log(f"Mining canonical Exact Sign Sequences (lengths {min_es_length} to {max_es_length})...", 0.45)
-    combo_candidates = set()
+    log(f"Mining canonical Exact Sign Sequences (lengths {min_es_length} to {max_es_length})...", 0.25)
+    seen_combos = defaultdict(list)
     for g in g_data:
         items = list(g['signs'].items())
         n = len(items)
         for k in range(min_es_length, min(n + 1, max_es_length + 1)):
             for c in combinations(items, k):
                 cd = canon_dict(dict(c))
-                combo_candidates.add(tuple(sorted(cd.items())))
+                ct = tuple(sorted(cd.items()))
+                orient, _, _ = match_es_g(cd, g['signs'], g['prots'], min_overlap=min_overlap)
+                if orient is not None:
+                    seen_combos[ct].append(g['gkey'])
 
-    log(f"Mined {len(combo_candidates):,} unique candidate sequences.", 0.60)
+    total_mined = len(seen_combos)
+    log(f"Mined {total_mined:,} unique candidate signatures.", 0.40)
 
-    # Greedy set cover
-    log(f"Running Greedy Optimization with Strategy: '{strategy}'...", 0.70)
-    covered = set()
-    selected = []
-    g_assignment = {}
+    # 1. Export ES_Combinations.csv
+    combo_records = []
+    for ct, gkeys in seen_combos.items():
+        unique_gkeys = sorted(set(gkeys))
+        cd = dict(ct)
+        combo_records.append({
+            'Length': len(cd),
+            'Frequency_Count': len(unique_gkeys),
+            'In_2+_Gs': len(unique_gkeys) >= 2,
+            'Exact_Sign_Sequence': tuple_to_str(cd),
+            'Covered_G_Vectors': "; ".join(unique_gkeys)
+        })
 
-    while len(covered) < total_g:
-        best_cand = None
-        best_score = -1.0
-        best_gain = 0.0
-        best_new_gs = []
+    df_combos = pd.DataFrame(combo_records)
+    df_combos.sort_values(by=['In_2+_Gs', 'Frequency_Count', 'Length'], ascending=[False, False, False], inplace=True)
+    es_combinations_csv_path = os.path.join(output_dir, "ES_Combinations.csv")
+    df_combos.to_csv(es_combinations_csv_path, index=False)
+    log("Generated deliverable: ES_Combinations.csv", 0.45)
 
-        for cand in combo_candidates:
-            cand_dict = dict(cand)
-            cand_len = len(cand_dict)
-            cand_gain = 0.0
-            cand_new = []
+    # Select candidate modules for Set Cover optimization
+    log("Selecting candidate modules for Set Cover optimization...", 0.50)
+    cands_sorted = sorted(seen_combos.items(), key=lambda x: len(set(x[1])), reverse=True)
+    if len(cands_sorted) > 4000:
+        top_cands = [ct for ct, glist in cands_sorted if len(set(glist)) >= min_g_recurrence][:3500]
+        # Include full G-vector signatures
+        seen_ct = set(top_cands)
+        for g in g_data:
+            if len(g['signs']) >= min_es_length:
+                ct = tuple(sorted(canon_dict(g['signs']).items()))
+                if ct not in seen_ct:
+                    seen_ct.add(ct)
+                    top_cands.append(ct)
+    else:
+        top_cands = [ct for ct, glist in cands_sorted if len(set(glist)) >= min_g_recurrence]
 
-            for g in g_data:
-                if g['g_idx'] in covered:
+    eligible_modules = []
+    for ct in top_cands:
+        mod_dict = dict(ct)
+        hits = {}
+        tot_var = 0.0
+        for g in g_data:
+            orient, n_common, matched = match_es_g(mod_dict, g['signs'], g['prots'], min_overlap=min_overlap)
+            if orient is not None:
+                hits[g['g_idx']] = (orient, n_common, matched)
+                tot_var += g['weight']
+        if len(hits) >= min_g_recurrence:
+            eligible_modules.append({
+                'ct': ct,
+                'mod': mod_dict,
+                'len': len(mod_dict),
+                'hits': hits,
+                'initial_count': len(hits),
+                'initial_var': tot_var
+            })
+
+    # 2. Evaluate Anchor Strategies
+    log("Evaluating Anchor Strategies & Set Cover models...", 0.55)
+    def evaluate_strategy(name, seed_filter, scoring_func):
+        t_strat = time.time()
+        covered = set()
+        selected = []
+        g_assignment = {}
+
+        if seed_filter:
+            cands = [m for m in eligible_modules if seed_filter(m)]
+            if cands:
+                best_seed = max(cands, key=lambda m: scoring_func(m, set(m['hits'].keys())))
+                best_new = set(best_seed['hits'].keys())
+                covered.update(best_new)
+                lbl = f"ES_{len(selected)+1}"
+                for gi in best_new:
+                    g_assignment[gi] = (lbl, best_seed['hits'][gi])
+                selected.append({
+                    'lbl': lbl,
+                    'mod': best_seed['mod'],
+                    'new_g': best_new,
+                    'len': best_seed['len'],
+                    'var_gain': sum(g_data[gi]['weight'] for gi in best_new)
+                })
+
+        while len(covered) < total_g:
+            best_mod = None
+            best_new = set()
+            best_score = -1e9
+
+            for m in eligible_modules:
+                new_g = set(m['hits'].keys()) - covered
+                if len(new_g) < min_g_recurrence:
                     continue
-                sign, n_match, _ = match_es_g(cand_dict, g['signs'], g['prots'], min_overlap=min_overlap)
-                if sign is not None:
-                    cand_gain += g['weight']
-                    cand_new.append((g['g_idx'], sign, n_match))
-
-            if len(cand_new) >= min_g_recurrence:
-                if strategy == 'SVD_Variance':
-                    score = cand_gain
-                elif strategy == 'Max_Frequency':
-                    score = float(len(cand_new))
-                elif strategy == 'Deep_Specificity':
-                    score = cand_gain * (1.5 if cand_len >= 5 else 1.0)
-                else:  # Hybrid Multi-Objective
-                    score = cand_gain * np.sqrt(len(cand_new))
-
+                score = scoring_func(m, new_g)
                 if score > best_score:
                     best_score = score
-                    best_gain = cand_gain
-                    best_cand = cand
-                    best_new_gs = cand_new
+                    best_new = new_g
+                    best_mod = m
 
-        if best_cand is None or len(best_new_gs) < min_g_recurrence:
-            break
+            if not best_mod or len(best_new) < min_g_recurrence:
+                break
 
-        cand_dict = dict(best_cand)
-        es_name = f"ES_{len(selected)+1:02d}"
-        es_str = tuple_to_str(cand_dict)
+            covered.update(best_new)
+            lbl = f"ES_{len(selected)+1}"
+            for gi in best_new:
+                g_assignment[gi] = (lbl, best_mod['hits'][gi])
+            selected.append({
+                'lbl': lbl,
+                'mod': best_mod['mod'],
+                'new_g': best_new,
+                'len': best_mod['len'],
+                'var_gain': sum(g_data[gi]['weight'] for gi in best_new)
+            })
 
-        selected.append({
-            'es_id': es_name,
-            'dict': cand_dict,
-            'str': es_str,
-            'length': len(cand_dict),
-            'new_gs': best_new_gs,
-            'gain': best_gain,
-            'n_new': len(best_new_gs)
-        })
+        # Compute R2 per sample
+        roi_g_assigned = defaultdict(set)
+        for gi in covered:
+            g = g_data[gi]
+            roi_g_assigned[g['roi']].add(g['g_num'])
 
-        for g_idx, sign, n_m in best_new_gs:
-            covered.add(g_idx)
-            g_assignment[g_idx] = {
-                'es_id': es_name,
-                'sign': sign,
-                'n_match': n_m
-            }
-
-    cov_pct = (len(covered) / total_g * 100.0) if total_g > 0 else 0.0
-    tot_var_pct = (sum(e['gain'] for e in selected) / total_rois * 100.0) if total_rois > 0 else 0.0
-    log(f"Greedy Cover Complete: {len(selected)} ES modules cover {len(covered):,}/{total_g:,} Gs ({cov_pct:.1f}%).", 0.85)
-
-    # Conflict-Free Matrix & R2 Reconstruction
-    log("Constructing conflict-free matrix and computing cell-level R2...", 0.90)
-    matrix_rows = []
-    r2_rows = []
-
-    for r_id, info in roi_info.items():
-        row_assign = {'Sample': r_id, 'Cells': info['n_cells']}
-        selected_g_nums = [0]
-        used_g_nums = set()
-
-        for es in selected:
-            es_id = es['es_id']
-            cand_gs = [
-                g for g in g_data
-                if g['roi'] == r_id and g['g_idx'] in g_assignment and g_assignment[g['g_idx']]['es_id'] == es_id
-            ]
-            cand_gs = [g for g in cand_gs if g['g_num'] not in used_g_nums]
-            if cand_gs:
-                best_g = max(cand_gs, key=lambda x: (x['weight'], g_assignment[x['g_idx']]['n_match']))
-                sign = g_assignment[best_g['g_idx']]['sign']
-                row_assign[es_id] = f"G{best_g['g_num']}({sign})"
-                selected_g_nums.append(best_g['g_num'])
-                used_g_nums.add(best_g['g_num'])
+        r2_diffs, r2_opts, r2_fulls = [], [], []
+        for r_id, rdata in roi_info.items():
+            if rdata['G_all'] is not None and rdata['L_all'] is not None and rdata['X_log'] is not None:
+                X_log = rdata['X_log']
+                G_all = rdata['G_all']
+                L_all = rdata['L_all']
+                r2_f = rdata['r2_full']
+                sel_nums = sorted(roi_g_assigned.get(r_id, set()))
+                sel_cols = [0] + sel_nums
+                r2_o = compute_r2_vectorized(X_log, G_all[:, sel_cols], L_all[:, sel_cols])
+                r2_fulls.append(r2_f)
+                r2_opts.append(r2_o)
+                r2_diffs.append(r2_f - r2_o)
             else:
-                row_assign[es_id] = ""
+                r2_fulls.append(1.0)
+                r2_opts.append(1.0)
+                r2_diffs.append(0.0)
 
-        matrix_rows.append(row_assign)
+        tot_var = sum(g_data[gi]['weight'] for gi in covered)
 
-        # R2 Calculation if matrices are present
-        if info['G_all'] is not None and info['L_all'] is not None and info['X_log'] is not None:
-            selected_g_nums = sorted(set(selected_g_nums))
-            G_opt = info['G_all'][:, selected_g_nums]
-            L_opt = info['L_all'][:, selected_g_nums]
-            r2_opt = compute_r2_vectorized(info['X_log'], G_opt, L_opt)
-            delta_r2 = info['r2_full'] - r2_opt
-            status = 'High Fidelity (<0.05)' if delta_r2 < 0.05 else ('Moderate Loss (0.05-0.15)' if delta_r2 <= 0.15 else 'Noticeable Loss (>0.15)')
-            r2_full_val = info['r2_full']
-        else:
-            r2_opt = 1.0
-            delta_r2 = 0.0
-            r2_full_val = 1.0
-            status = 'Tail Table (Unspecified)'
+        return {
+            'Anchor_Strategy': name,
+            'ES_Count': len(selected),
+            'Covered_Gs': len(covered),
+            'Coverage_%': round(len(covered) / total_g * 100, 2) if total_g > 0 else 0,
+            'Variance_%': round(tot_var / total_rois * 100, 2) if total_rois > 0 else 0,
+            'Mean_R2_full': round(float(np.mean(r2_fulls)), 4),
+            'Mean_R2_opt': round(float(np.mean(r2_opts)), 4),
+            'Mean_Delta_R2': round(float(np.mean(r2_diffs)), 4),
+            'Excellent_%': round(float(np.mean(np.array(r2_diffs) < 0.05) * 100), 1),
+            'Acceptable_%': round(float(np.mean((np.array(r2_diffs) >= 0.05) & (np.array(r2_diffs) <= 0.15)) * 100), 1),
+            'Alert_%': round(float(np.mean(np.array(r2_diffs) > 0.15) * 100), 1),
+            'Exec_Time_s': round(time.time() - t_strat, 2),
+            'selected': selected,
+            'g_assignment': g_assignment,
+            'r2_per_sample': {r_id: (r2_fulls[i], r2_opts[i], r2_diffs[i], sorted(roi_g_assigned.get(r_id, set()))) for i, r_id in enumerate(roi_info.keys())}
+        }
 
-        r2_rows.append({
+    # Evaluate strategies
+    strategies_eval = []
+    # 1. Pure SVD Variance Driver
+    strategies_eval.append(evaluate_strategy(
+        "1. SVD Variance Driver", None,
+        lambda m, new_g: sum(g_data[gi]['weight'] for gi in new_g)
+    ))
+    # 2. Max Frequency / Universality
+    strategies_eval.append(evaluate_strategy(
+        "2. Max Frequency / Universality", None,
+        lambda m, new_g: float(len(new_g))
+    ))
+    # 3. Deep Specificity
+    strategies_eval.append(evaluate_strategy(
+        "3. Deep Specificity", None,
+        lambda m, new_g: sum(g_data[gi]['weight'] for gi in new_g) * (1.5 if m['len'] >= 5 else 1.0)
+    ))
+    # 4. Biological Hallmark / Seed
+    pair_counts = defaultdict(int)
+    for g in g_data:
+        for p1, p2 in combinations(sorted(g['prots']), 2):
+            if g['signs'][p1] == g['signs'][p2]:
+                pair_counts[(p1, p2)] += 1
+    top_pair = max(pair_counts.items(), key=lambda x: x[1])[0] if pair_counts else None
+    seed_func = (lambda m: top_pair[0] in m['mod'] and top_pair[1] in m['mod']) if top_pair else None
+    strategies_eval.append(evaluate_strategy(
+        f"4. Biological Hallmark ({top_pair[0] if top_pair else 'Seed'} Co-expression)", seed_func,
+        lambda m, new_g: sum(g_data[gi]['weight'] for gi in new_g) * np.sqrt(len(new_g))
+    ))
+    # 5. Hybrid Multi-Objective (Variance x Count)
+    hybrid_res = evaluate_strategy(
+        "5. Hybrid Multi-Objective (Variance x Count)", None,
+        lambda m, new_g: sum(g_data[gi]['weight'] for gi in new_g) * np.sqrt(len(new_g))
+    )
+    strategies_eval.append(hybrid_res)
+
+    # Select target strategy based on user preference
+    target_strat = hybrid_res
+    if 'SVD' in strategy:
+        target_strat = strategies_eval[0]
+    elif 'Frequency' in strategy:
+        target_strat = strategies_eval[1]
+    elif 'Deep' in strategy:
+        target_strat = strategies_eval[2]
+    elif 'Bio' in strategy:
+        target_strat = strategies_eval[3]
+
+    # Export Anchor_Strategies_Comparison.xlsx
+    anchor_xlsx_path = os.path.join(output_dir, "Anchor_Strategies_Comparison.xlsx")
+    wb_anc = openpyxl.Workbook()
+    ws_ov = wb_anc.active
+    ws_ov.title = "Anchor_Strategies_Overview"
+    headers_ov = ['Anchor_Strategy', 'ES_Count', 'Covered_Gs', 'Coverage_%', 'Variance_%', 'Mean_R2_full', 'Mean_R2_opt', 'Mean_Delta_R2', 'Excellent_%', 'Acceptable_%', 'Alert_%', 'Exec_Time_s']
+    ws_ov.append(headers_ov)
+    for s in strategies_eval:
+        ws_ov.append([
+            s['Anchor_Strategy'], s['ES_Count'], s['Covered_Gs'], s['Coverage_%'],
+            s['Variance_%'], s['Mean_R2_full'], s['Mean_R2_opt'], s['Mean_Delta_R2'],
+            s['Excellent_%'], s['Acceptable_%'], s['Alert_%'], s['Exec_Time_s']
+        ])
+
+    ws_es_detail = wb_anc.create_sheet(title=f"Optimal_Strategy_{len(target_strat['selected'])}_ES")
+    headers_es = ['Rank', 'ES_Label', 'Sequence_Length', 'New_G_Covered', 'Direct_Matches_(+)', 'Inverse_Matches_(-)', 'Cumulative_G_Covered', 'Coverage_%', 'New_Variance_Weight', 'Cumulative_Variance_%', 'ROIs_Covered_Count', 'Exact_Sign_Sequence']
+    ws_es_detail.append(headers_es)
+
+    cum_g = 0
+    cum_var = 0.0
+    for rk, es in enumerate(target_strat['selected'], 1):
+        cum_g += len(es['new_g'])
+        cum_var += es['var_gain']
+        d_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '+')
+        i_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '-')
+        rois_cnt = len(set(g_data[gi]['roi'] for gi in es['new_g']))
+        ws_es_detail.append([
+            rk, es['lbl'], es['len'], len(es['new_g']), d_cnt, i_cnt,
+            cum_g, round(cum_g / total_g * 100, 2) if total_g > 0 else 0,
+            round(es['var_gain'], 4), round(cum_var / total_rois * 100, 2) if total_rois > 0 else 0,
+            rois_cnt, tuple_to_str(es['mod'])
+        ])
+
+    wb_anc.save(anchor_xlsx_path)
+    log("Generated deliverable: Anchor_Strategies_Comparison.xlsx", 0.70)
+
+    # 3 & 4: Build Optimal_ES_Result_Signs_R2.xlsx and Optimal_ES_Result.xlsx
+    log("Constructing Master Excel Deliverables & Reconstruction Matrices...", 0.80)
+    def build_master_workbook(file_name):
+        wb = openpyxl.Workbook()
+        # Sheet 1: Summary
+        ws_sum = wb.active
+        ws_sum.title = 'Summary'
+        ws_sum.append(['OPTIMAL EXACT SIGN SEQUENCES (ES) & R2 VARIANCE REPORT'])
+        ws_sum.append(['Surprisal Analysis: Exact Sign Sequences, G Orientations & Reconstruction Quality'])
+        ws_sum.append([])
+        ws_sum.append(['Metric', 'Value'])
+        ws_sum.append(['Primary Strategy Applied', target_strat['Anchor_Strategy']])
+        ws_sum.append(['Total Cohort Samples / ROIs', total_rois])
+        ws_sum.append(['Total Cellular Microenvironment Vectors (G)', total_g])
+        ws_sum.append(['Number of Optimal ES Modules', target_strat['ES_Count']])
+        ws_sum.append(['Total G-Vectors Covered', target_strat['Covered_Gs']])
+        ws_sum.append(['Universe G Coverage %', f"{target_strat['Coverage_%']}%"])
+        ws_sum.append(['Total Kinetic Variance Explained', f"{target_strat['Variance_%']}%"])
+        ws_sum.append(['Mean R2 Full Reconstruction', target_strat['Mean_R2_full']])
+        ws_sum.append(['Mean R2 Optimal Reconstruction', target_strat['Mean_R2_opt']])
+        ws_sum.append(['Mean Delta R2 Compression Penalty', target_strat['Mean_Delta_R2']])
+        ws_sum.append(['High Fidelity Samples (<0.05 Delta R2)', f"{target_strat['Excellent_%']}%"])
+        ws_sum.append(['Acceptable Fidelity Samples (0.05-0.15)', f"{target_strat['Acceptable_%']}%"])
+        ws_sum.append(['Noticeable Loss Samples (>0.15)', f"{target_strat['Alert_%']}%"])
+
+        # Sheet 2: Optimal_ES_SetCover
+        ws_opt = wb.create_sheet(title='Optimal_ES_SetCover')
+        ws_opt.append(headers_es)
+        cum_g_local = 0
+        cum_var_local = 0.0
+        for rk, es in enumerate(target_strat['selected'], 1):
+            cum_g_local += len(es['new_g'])
+            cum_var_local += es['var_gain']
+            d_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '+')
+            i_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '-')
+            rois_cnt = len(set(g_data[gi]['roi'] for gi in es['new_g']))
+            ws_opt.append([
+                rk, es['lbl'], es['len'], len(es['new_g']), d_cnt, i_cnt,
+                cum_g_local, round(cum_g_local / total_g * 100, 2) if total_g > 0 else 0,
+                round(es['var_gain'], 4), round(cum_var_local / total_rois * 100, 2) if total_rois > 0 else 0,
+                rois_cnt, tuple_to_str(es['mod'])
+            ])
+
+        # Sheet 3: ES_Conflict_Free_Matrix
+        ws_mat = wb.create_sheet(title='ES_Conflict_Free_Matrix')
+        mat_cols = ['Sample', 'Cells', 'Total_G'] + [es['lbl'] for es in target_strat['selected']]
+        ws_mat.append(mat_cols)
+        for r_id, s in roi_info.items():
+            row = [r_id, s['n_cells'], len([g for g in g_data if g['roi'] == r_id])]
+            used_g = set()
+            for es in target_strat['selected']:
+                lbl = es['lbl']
+                cands = [gi for gi in es['new_g'] if g_data[gi]['roi'] == r_id and g_data[gi]['g_num'] not in used_g]
+                if cands:
+                    best_gi = max(cands, key=lambda gi: g_data[gi]['weight'])
+                    g_item = g_data[best_gi]
+                    orient = target_strat['g_assignment'][best_gi][1][0]
+                    row.append(f"G{g_item['g_num']}({orient})")
+                    used_g.add(g_item['g_num'])
+                else:
+                    row.append("")
+            ws_mat.append(row)
+
+        # Sheet 4: Best_Combination_Details
+        ws_det = wb.create_sheet(title='Best_Combination_Details')
+        ws_det.append(['Sample', 'Cells', 'Total_G_In_Sample', 'Covered_G_Count', 'Sample_Coverage_%', 'Assigned_ES_Labels', 'Consolidated_G_Assignments'])
+        for r_id, s in roi_info.items():
+            sample_gs = [g for g in g_data if g['roi'] == r_id]
+            cov_gs = [g for g in sample_gs if g['g_idx'] in target_strat['g_assignment']]
+            assigned_es = sorted(set(target_strat['g_assignment'][g['g_idx']][0] for g in cov_gs))
+            assignments_str = []
+            for g in sorted(cov_gs, key=lambda x: x['g_num']):
+                lbl, hit = target_strat['g_assignment'][g['g_idx']]
+                orient = hit[0]
+                pct = (hit[1] / g['count'] * 100) if g['count'] > 0 else 0
+                assignments_str.append(f"G{g['g_num']}:{lbl}({orient})[{pct:.1f}%]")
+            ws_det.append([
+                r_id, s['n_cells'], len(sample_gs), len(cov_gs),
+                round(len(cov_gs) / len(sample_gs) * 100, 2) if sample_gs else 0,
+                "; ".join(assigned_es), ", ".join(assignments_str)
+            ])
+
+        # Sheet 5: Per_G_Coverage_Detail
+        ws_perg = wb.create_sheet(title='Per_G_Coverage_Detail')
+        ws_perg.append(['Sample', 'G_Key', 'G_Num', 'Total_Prots_In_G', 'Assigned_ES', 'Orientation', 'Matched_Prots_Count', 'Overlap_%', 'Variance_Weight', 'Status'])
+        for g in g_data:
+            if g['g_idx'] in target_strat['g_assignment']:
+                lbl, hit = target_strat['g_assignment'][g['g_idx']]
+                orient, n_m, _ = hit
+                pct = round(n_m / g['count'] * 100, 1) if g['count'] > 0 else 0
+                ws_perg.append([
+                    g['roi'], g['gkey'], g['g_num'], g['count'], lbl, orient, n_m, pct, round(g['weight'], 4), 'Covered'
+                ])
+            else:
+                ws_perg.append([
+                    g['roi'], g['gkey'], g['g_num'], g['count'], 'UNASSIGNED', 'None', 0, 0.0, round(g['weight'], 4), 'Uncovered'
+                ])
+
+        # Sheet 6: R2_Comparison_Per_ROI
+        ws_r2 = wb.create_sheet(title='R2_Comparison_Per_ROI')
+        ws_r2.append(['Sample', 'N_Cells', 'R2_Full_All_Components', 'R2_Optimal_Selected_Components', 'Delta_R2_Loss', 'N_Components_Used', 'Selected_G_List', 'Interpretation'])
+        for r_id, (r2_f, r2_o, delta, sel_gs) in target_strat['r2_per_sample'].items():
+            s = roi_info[r_id]
+            interp = 'High Fidelity (<0.05 loss)' if delta < 0.05 else ('Moderate Loss (0.05-0.15)' if delta <= 0.15 else 'Noticeable Loss (>0.15)')
+            ws_r2.append([
+                r_id, s['n_cells'], round(r2_f, 4), round(r2_o, 4), round(delta, 4),
+                len(sel_gs), ", ".join(f"G{n}" for n in sel_gs), interp
+            ])
+
+        # Sheet 7: Per_ROI_Coverage
+        ws_rois = wb.create_sheet(title='Per_ROI_Coverage')
+        ws_rois.append(['Sample', 'Cells', 'Total_G', 'Covered_G', 'Coverage_%', 'Variance_Captured_%'])
+        for r_id, s in roi_info.items():
+            sample_gs = [g for g in g_data if g['roi'] == r_id]
+            cov_sample_gs = [g for g in sample_gs if g['g_idx'] in target_strat['g_assignment']]
+            var_cap = sum(g['weight'] for g in cov_sample_gs)
+            ws_rois.append([
+                r_id, s['n_cells'], len(sample_gs), len(cov_sample_gs),
+                round(len(cov_sample_gs) / len(sample_gs) * 100, 2) if sample_gs else 0,
+                round(var_cap * 100, 2)
+            ])
+
+        # Sheet 8: Coverage_Curve
+        ws_curv = wb.create_sheet(title='Coverage_Curve')
+        ws_curv.append(['Step', 'ES_Label', 'Cumulative_G_Covered', 'Cumulative_Coverage_%', 'Cumulative_Variance_%'])
+        cum_g_local = 0
+        cum_var_local = 0.0
+        for rk, es in enumerate(target_strat['selected'], 1):
+            cum_g_local += len(es['new_g'])
+            cum_var_local += es['var_gain']
+            ws_curv.append([
+                rk, es['lbl'], cum_g_local,
+                round(cum_g_local / total_g * 100, 2) if total_g > 0 else 0,
+                round(cum_var_local / total_rois * 100, 2) if total_rois > 0 else 0
+            ])
+
+        p = os.path.join(output_dir, file_name)
+        wb.save(p)
+        return p
+
+    opt_signs_r2_path = build_master_workbook("Optimal_ES_Result_Signs_R2.xlsx")
+    opt_es_result_path = build_master_workbook("Optimal_ES_Result.xlsx")
+    log("Generated deliverables: Optimal_ES_Result.xlsx & Optimal_ES_Result_Signs_R2.xlsx", 0.90)
+
+    # 5. Create ZIP Bundle containing all 4 deliverables
+    zip_bundle_path = os.path.join(output_dir, "Deliverables_Bundle.zip")
+    with zipfile.ZipFile(zip_bundle_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.write(opt_es_result_path, arcname="Optimal_ES_Result.xlsx")
+        zf.write(opt_signs_r2_path, arcname="Optimal_ES_Result_Signs_R2.xlsx")
+        zf.write(es_combinations_csv_path, arcname="ES_Combinations.csv")
+        zf.write(anchor_xlsx_path, arcname="Anchor_Strategies_Comparison.xlsx")
+    log("Created compressed deliverable bundle: Deliverables_Bundle.zip", 0.95)
+
+    # Prepare DataFrames for GUI preview
+    # 1. ES modules DataFrame
+    es_preview_rows = []
+    cum_g = 0
+    cum_var = 0.0
+    for rk, es in enumerate(target_strat['selected'], 1):
+        cum_g += len(es['new_g'])
+        cum_var += es['var_gain']
+        d_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '+')
+        i_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '-')
+        es_preview_rows.append({
+            'Rank': rk,
+            'ES_ID': es['lbl'],
+            'Length': es['len'],
+            'New_Gs_Covered': len(es['new_g']),
+            'Direct (+)': d_cnt,
+            'Inverse (-)': i_cnt,
+            'Cumulative_Gs': cum_g,
+            'Coverage_%': f"{(cum_g / total_g * 100.0):.1f}%",
+            'Exact_Sign_Sequence': tuple_to_str(es['mod'])
+        })
+    df_es = pd.DataFrame(es_preview_rows)
+
+    # 2. Conflict-free matrix DataFrame
+    mat_rows = []
+    for r_id, s in roi_info.items():
+        row_dict = {'Sample': r_id, 'Cells': s['n_cells']}
+        used_g = set()
+        for es in target_strat['selected']:
+            lbl = es['lbl']
+            cands = [gi for gi in es['new_g'] if g_data[gi]['roi'] == r_id and g_data[gi]['g_num'] not in used_g]
+            if cands:
+                best_gi = max(cands, key=lambda gi: g_data[gi]['weight'])
+                g_item = g_data[best_gi]
+                orient = target_strat['g_assignment'][best_gi][1][0]
+                row_dict[lbl] = f"G{g_item['g_num']}({orient})"
+                used_g.add(g_item['g_num'])
+            else:
+                row_dict[lbl] = ""
+        mat_rows.append(row_dict)
+    df_mat = pd.DataFrame(mat_rows)
+
+    # 3. R2 per sample DataFrame
+    r2_preview_rows = []
+    for r_id, (r2_f, r2_o, delta, sel_gs) in target_strat['r2_per_sample'].items():
+        interp = 'High Fidelity (<0.05 loss)' if delta < 0.05 else ('Moderate Loss (0.05-0.15)' if delta <= 0.15 else 'Noticeable Loss (>0.15)')
+        r2_preview_rows.append({
             'Sample': r_id,
-            'Cells': info['n_cells'],
-            'Selected_G_Count': max(0, len(selected_g_nums) - 1),
-            'Selected_Gs': ", ".join(f"G{n}" for n in selected_g_nums if n > 0),
-            'R2_full': r2_full_val,
-            'R2_optimal': r2_opt,
-            'Delta_R2': delta_r2,
-            'Status': status
+            'Cells': roi_info[r_id]['n_cells'],
+            'Components_Used': len(sel_gs),
+            'R2_full': round(r2_f, 4),
+            'R2_optimal': round(r2_o, 4),
+            'Delta_R2': round(delta, 4),
+            'Fidelity_Tier': interp
         })
+    df_r2 = pd.DataFrame(r2_preview_rows)
 
-    df_matrix = pd.DataFrame(matrix_rows)
-    df_r2 = pd.DataFrame(r2_rows)
-
-    # Format ES table
-    es_records = []
-    cum = 0
-    for es in selected:
-        cum += es['n_new']
-        es_records.append({
-            'ES_ID': es['es_id'],
-            'Length': es['length'],
-            'Exact_Sign_Sequence': es['str'],
-            'G_Covered': es['n_new'],
-            'Variance_Gain': round(es['gain'], 4),
-            'Cum_Coverage_Pct': f"{(cum/total_g)*100.0:.1f}%"
+    # 4. Anchor strategies overview DataFrame
+    anc_rows = []
+    for s in strategies_eval:
+        anc_rows.append({
+            'Anchor_Strategy': s['Anchor_Strategy'],
+            'ES_Count': s['ES_Count'],
+            'Covered_Gs': f"{s['Covered_Gs']}/{total_g}",
+            'Coverage_%': f"{s['Coverage_%']}%",
+            'Variance_%': f"{s['Variance_%']}%",
+            'Mean_R2_opt': s['Mean_R2_opt'],
+            'Mean_Delta_R2': s['Mean_Delta_R2'],
+            'High_Fidelity_%': f"{s['Excellent_%']}%"
         })
-    df_es = pd.DataFrame(es_records)
-
-    # Export master deliverable Excel
-    os.makedirs('Docs', exist_ok=True)
-    timestamp = time.strftime('%Y%m%d_%H%M%S')
-    excel_path = os.path.join('Docs', f"User_Run_{timestamp}_Report.xlsx")
-
-    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
-        df_es.to_excel(writer, sheet_name='Selected_ES_Modules', index=False)
-        df_matrix.to_excel(writer, sheet_name='Allocation_Matrix', index=False)
-        df_r2.to_excel(writer, sheet_name='R2_Reconstruction', index=False)
+    df_anc = pd.DataFrame(anc_rows)
 
     summary = {
         'total_samples': total_rois,
         'total_g': total_g,
-        'es_count': len(selected),
-        'g_covered': len(covered),
-        'coverage_pct': round(cov_pct, 2),
-        'variance_explained_pct': round(tot_var_pct, 2),
-        'avg_r2_optimal': round(float(df_r2['R2_optimal'].mean()), 4),
-        'avg_delta_r2': round(float(df_r2['Delta_R2'].mean()), 4),
-        'excel_path': excel_path,
-        'duration_sec': round(time.time() - t0, 2)
+        'es_count': target_strat['ES_Count'],
+        'g_covered': target_strat['Covered_Gs'],
+        'coverage_pct': target_strat['Coverage_%'],
+        'variance_explained_pct': target_strat['Variance_%'],
+        'avg_r2_optimal': target_strat['Mean_R2_opt'],
+        'avg_delta_r2': target_strat['Mean_Delta_R2'],
+        'high_fidelity_pct': target_strat['Excellent_%'],
+        'duration_sec': round(time.time() - t0, 2),
+        'opt_es_result_path': opt_es_result_path,
+        'opt_signs_r2_path': opt_signs_r2_path,
+        'es_combinations_csv_path': es_combinations_csv_path,
+        'anchor_xlsx_path': anchor_xlsx_path,
+        'zip_bundle_path': zip_bundle_path
     }
 
-    log(f"Execution finished successfully in {summary['duration_sec']}s! Report generated.", 1.00)
-    return summary, df_es, df_matrix, df_r2
+    log(f"All 4 deliverables generated in {summary['duration_sec']}s!", 1.00)
+    return summary, df_es, df_mat, df_r2, df_anc

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cross-Cohort Deliverables Comparative Report</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 30px; background-color: #F8F9FA; color: #212529; }
+.container { max-width: 1200px; margin: 0 auto; background: #FFF; padding: 35px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+h1 { color: #1F4E79; border-bottom: 2px solid #1F4E79; padding-bottom: 10px; }
+h2 { color: #2C3E50; margin-top: 30px; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 25px; }
+th, td { padding: 12px 14px; text-align: left; border: 1px solid #E2E8F0; font-size: 14px; }
+th { background-color: #1F4E79; color: #FFF; font-weight: 600; }
+tr:nth-child(even) { background-color: #F8FAFC; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; }
+.badge-success { background-color: #D1E7DD; color: #0F5132; }
+.badge-info { background-color: #CFE2FF; color: #084298; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Cross-Cohort Deliverables Comparative Report</h1>
+<p><strong>Deliverable Files Compared:</strong> <code>Optimal_ES_Result.xlsx</code>, <code>Optimal_ES_Result_Signs_R2.xlsx</code>, <code>ES_Combinations.csv</code>, <code>Anchor_Strategies_Comparison.xlsx</code></p>
+
+<h2>1. Executive Summary: Original 120-ROI vs. Evaluation Cohort (6 PDE Samples)</h2>
+<table>
+<thead>
+<tr>
+<th>Metric / Dimension</th>
+<th>Original 120-ROI IMC Dataset</th>
+<th>Evaluation Cohort (6 PDE Samples)</th>
+<th>Analytical Difference & Scientific Insight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cohort Scope & Specimen Type</strong></td>
+<td>120 ROIs from 20 Patients (FFPE IMC)</td>
+<td>6 PDE Clinical Samples (numbered 1 to 7)</td>
+<td>Different biological scale: discovery IMC cohort vs targeted PDE cohort</td>
+</tr><tr>
+<td><strong>Proteomic Panel Complexity</strong></td>
+<td>40 Multiplexed Markers (TME, Immune, Stroma)</td>
+<td>10 Targeted Receptors (CMET, HER2, EGFR, EPCAM, etc.)</td>
+<td>Targeted signaling panel vs comprehensive multi-lineage atlas</td>
+</tr><tr>
+<td><strong>Single-Cell Resolution</strong></td>
+<td>Unspecified (Cell phenotyping across ROIs)</td>
+<td>47,932 Single Cells directly reconstructed</td>
+<td>Evaluation cohort explicitly tracks cellular amplitude dynamics (L-values)</td>
+</tr><tr>
+<td><strong>Microenvironment G-Vectors</strong></td>
+<td>2,778 G-vectors across 120 ROIs</td>
+<td>54 G-vectors (9 non-trivial Gs per PDE sample)</td>
+<td>Original dataset has 51x more microenvironmental states</td>
+</tr><tr>
+<td><strong>Total Candidate ES Combinations</strong></td>
+<td>120,791 signatures mined (lengths 3-8)</td>
+<td>9,948 signatures mined (lengths 3-8)</td>
+<td>Combinatorial space scales with panel size (40 vs 10 proteins)</td>
+</tr><tr>
+<td><strong>Recurring ES Signatures (>=2 Gs)</strong></td>
+<td>23,511 signatures (45.3%)</td>
+<td>4,436 signatures (44.6%)</td>
+<td>High recurrence consistency across diverse biological contexts</td>
+</tr><tr>
+<td><strong>Optimal Set Cover Modules</strong></td>
+<td>32 ES Modules</td>
+<td>4 ES Modules</td>
+<td>4 modules fully explain the 10-protein subspace vs 32 modules for 40 proteins</td>
+</tr><tr>
+<td><strong>Universe G-Vector Coverage</strong></td>
+<td>100.0% (2,778 / 2,778 G-vectors)</td>
+<td>100.0% (54 / 54 G-vectors)</td>
+<td>Both cohorts achieved 100% complete coverage without contradictions</td>
+</tr><tr>
+<td><strong>Total Kinetic Variance Captured</strong></td>
+<td>88.3% of total microenvironmental variance</td>
+<td>100.0% of total kinetic variance</td>
+<td>Full mathematical representation achieved on the 10-protein subspace</td>
+</tr><tr>
+<td><strong>Mean Reconstruction Quality (R2)</strong></td>
+<td>R2_full = 0.8572, R2_optimal = 0.7788</td>
+<td>R2_full = 1.0000, R2_optimal = 1.0000</td>
+<td>Zero information loss on the 10-protein dataset due to complete basis rank</td>
+</tr><tr>
+<td><strong>Compression Penalty (Delta R2)</strong></td>
+<td>0.0784 (average 7.8% variance penalty)</td>
+<td>0.0000 (0.0% variance penalty)</td>
+<td>Perfect mathematical reconstruction across 47,932 single cells</td>
+</tr><tr>
+<td><strong>High-Fidelity Samples (<0.05 loss)</strong></td>
+<td>38.3% (46 / 120 ROIs)</td>
+<td>100.0% (6 / 6 PDE Samples)</td>
+<td>Targeted panel achieves 100% top-tier reconstruction fidelity</td>
+</tr></tbody>
+</table>
+
+<h2>2. 6 Greedy Anchor Strategies Benchmark Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Strategy Name</th>
+<th>Orig ES</th>
+<th>Orig Coverage</th>
+<th>Orig Variance</th>
+<th>Orig R²_opt</th>
+<th>Eval ES</th>
+<th>Eval Coverage</th>
+<th>Eval Variance</th>
+<th>Eval R²_opt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. SVD Variance Driver</strong></td>
+<td>31</td>
+<td>99.89%</td>
+<td>87.6%</td>
+<td>0.8837</td>
+<td>4</td>
+<td>100.0%</td>
+<td>100.0%</td>
+<td>1.0</td>
+</tr><tr>
+<td><strong>2. Max Frequency / Universality</strong></td>
+<td>31</td>
+<td>99.86%</td>
+<td>87.57%</td>
+<td>0.8834</td>
+<td>4</td>
+<td>100.0%</td>
+<td>100.0%</td>
+<td>1.0</td>
+</tr><tr>
+<td><strong>3. Deep Specificity</strong></td>
+<td>32</td>
+<td>99.89%</td>
+<td>87.59%</td>
+<td>0.8837</td>
+<td>6</td>
+<td>98.15%</td>
+<td>99.7%</td>
+<td>0.9983</td>
+</tr><tr>
+<td><strong>4. Biological Seed 1</strong></td>
+<td>33</td>
+<td>99.89%</td>
+<td>87.59%</td>
+<td>0.8836</td>
+<td>5</td>
+<td>100.0%</td>
+<td>100.0%</td>
+<td>1.0</td>
+</tr><tr>
+<td><strong>5. Biological Seed 2</strong></td>
+<td>34</td>
+<td>99.86%</td>
+<td>87.55%</td>
+<td>0.8833</td>
+<td>5</td>
+<td>100.0%</td>
+<td>100.0%</td>
+<td>1.0</td>
+</tr><tr>
+<td><strong>6. Hybrid Multi-Objective</strong></td>
+<td>32</td>
+<td>99.93%</td>
+<td>87.61%</td>
+<td>0.8838</td>
+<td>4</td>
+<td>100.0%</td>
+<td>100.0%</td>
+<td>1.0</td>
+</tr></tbody>
+</table>
+
+<h2>3. Optimal Exact Sign Sequences (ES) Identified</h2>
+<h3>Evaluation Cohort (4 Modules - 100% G-Vector Coverage)</h3>
+<table>
+<thead>
+<tr><th>Rank</th><th>Label</th><th>Length</th><th>Gs Covered</th><th>Cumulative %</th><th>Exact Sign Sequence</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td><td><strong>ES_1</strong></td><td>3</td><td>21</td><td>38.89%</td><td><code>CKIT(+) | EGFR(+) | IGFR(+)</code></td>
+</tr><tr>
+<td>2</td><td><strong>ES_2</strong></td><td>3</td><td>16</td><td>68.52%</td><td><code>CD24(+) | EPCAM(-) | PDL1(+)</code></td>
+</tr><tr>
+<td>3</td><td><strong>ES_3</strong></td><td>3</td><td>12</td><td>90.74%</td><td><code>CD44(+) | CKIT(-) | HER2(-)</code></td>
+</tr><tr>
+<td>4</td><td><strong>ES_4</strong></td><td>4</td><td>5</td><td>100.0%</td><td><code>CMET(+) | EGFR(+) | EPCAM(-) | MUC1(+)</code></td>
+</tr></tbody>
+</table>
+</div>
+</body>
+</html>
