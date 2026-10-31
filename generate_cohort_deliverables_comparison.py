@@ -382,3 +382,4 @@ tr:nth-child(even) {{ background-color: #F8FAFC; }}
 
 if __name__ == '__main__':
     create_comparison()
+
