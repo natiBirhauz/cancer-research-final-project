@@ -5,10 +5,11 @@ Simplified, Clean High-Contrast Web User Interface for the
 Cancer Research TME Surprisal Analysis & Exact Sign Sequence (ES) Platform.
 
 Key Features:
-- 100% English, high-contrast black text on white background (zero color clashes).
+- 100% Bilingual: High-contrast English layout + Complete Hebrew User Guide Section.
 - Forces Light Mode (__theme=light) to prevent OS dark mode conflicts.
-- Direct download of Sample_Input_Template.xlsx format guide.
-- User-supplied dataset ingestion (Excel files, ZIP archive, or directory path).
+- Downloadable input template (Sample_Input_Template.xlsx).
+- Downloadable demo deliverables & column data dictionary (Deliverables_Data_Dictionary.xlsx).
+- User-supplied dataset ingestion (Excel files or .zip archive).
 - Automated execution generating the 4 master deliverables:
   1. Optimal_ES_Result.xlsx
   2. Optimal_ES_Result_Signs_R2.xlsx
@@ -28,6 +29,14 @@ from pipeline_engine import run_user_pipeline
 TEMPLATE_FILE = "Sample_Input_Template.xlsx"
 if not os.path.exists(TEMPLATE_FILE):
     TEMPLATE_FILE = os.path.join("Docs", "Sample_Input_Template.xlsx")
+
+DICT_FILE = os.path.join("Docs", "Demo_Deliverables", "Deliverables_Data_Dictionary.xlsx")
+if not os.path.exists(DICT_FILE):
+    DICT_FILE = os.path.join("Docs", "Deliverables_Data_Dictionary.xlsx")
+
+DEMO_ZIP_FILE = os.path.join("Docs", "Demo_Deliverables", "Demo_Deliverables_Bundle.zip")
+if not os.path.exists(DEMO_ZIP_FILE):
+    DEMO_ZIP_FILE = os.path.join("Docs", "Demo_Deliverables_Bundle.zip")
 
 HEAD_SCRIPT = """
 <script>
@@ -108,6 +117,17 @@ input, textarea, select {
     font-size: 1rem !important;
     color: #222222 !important;
     margin: 0 !important;
+}
+
+/* Hebrew Section Specific RTL Styling */
+.hebrew-box {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif !important;
+    line-height: 1.6 !important;
+}
+.hebrew-box h3, .hebrew-box h4, .hebrew-box h5, .hebrew-box p, .hebrew-box li, .hebrew-box strong {
+    color: #000000 !important;
 }
 
 /* High contrast Run button */
@@ -267,16 +287,91 @@ def build_app():
         </div>
         """)
 
-        # Instruction Guide & Sample Template Section
-        with gr.Accordion("📘 Instructions & Format Guide (Click to View)", open=True):
+        # -------------------------------------------------------------
+        # Section 1: מדריך למשתמש בעברית – הנחיות, מדדים וקבצי פלט
+        # -------------------------------------------------------------
+        with gr.Accordion("🇮🇱 מדריך מקיף בעברית: הנחיות שימוש, הסבר המדדים ומילון עמודות לקבצי הפלט (לחץ לפתיחה)", open=True):
+            gr.HTML(r"""
+            <div class="hebrew-box" style="background: #FFFFFF; border: 1px solid #000000; border-radius: 6px; padding: 18px; margin-bottom: 16px;">
+                <h3 style="margin-top: 0; font-size: 1.25rem; font-weight: bold; border-bottom: 2px solid #000000; padding-bottom: 8px;">
+                    1. מדריך הפעלה שלב-אחר-שלב (How to Run Without Errors)
+                </h3>
+                <ol style="padding-right: 20px; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>שלב 1 – הכנת הנתונים:</strong> ודא שהנתונים שלך ערוכים באחד משני הפורמטים הנתמכים:
+                        <ul style="padding-right: 20px; margin: 6px 0;">
+                            <li><strong>פורמט א' (מטריצות Raw - מומלץ):</strong> קובץ אקסל המכיל שני גיליונות: גיליון <code>Gvalues</code> (שורות חלבונים, עמודות $G_0..G_k$) וגיליון <code>Lambavalues</code> (שורות תאים בודדים, עמודות $L_0..L_k$).</li>
+                            <li><strong>פורמט ב' (טבלאות Tail):</strong> קובץ אקסל המכיל עמודות זנב כגון <code>G1+, G1-, G2+, G2-...</code> עם שמות החלבונים המשתתפים.</li>
+                        </ul>
+                    </li>
+                    <li><strong>שלב 2 – טעינת הקבצים:</strong> גרור את קבצי האקסל (או קובץ ZIP המכיל את כל תיקיות החולים) לתיבת ההעלאה מטה. המערכת קוראת את כל הקבצים וממזגת אותם אוטומטית.</li>
+                    <li><strong>שלב 3 – בחירת פרמטרים:</strong> בחר באסטרטגיית העוגן הרצויה (ברירת המחדל המומלצת היא Hybrid) והגדר את אורך החתימות הרצוי.</li>
+                    <li><strong>שלב 4 – הרצה:</strong> לחץ על כפתור <code>▶ Run Algorithm & Generate Deliverables</code>.</li>
+                    <li><strong>שלב 5 – הורדת התוצאות:</strong> מיד בסיום יופיעו כפתורי הורדה ל-4 קבצי המאסטר וקובץ ZIP מאוחד.</li>
+                </ol>
+
+                <h3 style="margin-top: 20px; font-size: 1.25rem; font-weight: bold; border-bottom: 2px solid #000000; padding-bottom: 8px;">
+                    2. פירוט המדדים והפרמטרים הנשלטים בממשק (Execution Controls)
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; font-size: 0.9rem;">
+                    <div style="border: 1px solid #000000; padding: 12px; border-radius: 4px; background: #FFFFFF;">
+                        <strong>Primary Anchor Strategy (אסטרטגיית העוגן):</strong><br>
+                        מגדירה את פונקציית המטרה המתמטית של פותר ה-Set Cover הגרידי:
+                        <ul style="padding-right: 20px; margin: 4px 0;">
+                            <li><strong>Hybrid Multi-Objective:</strong> מאזנת בין מקסימום שונות קינטית לשימור ביולוגי רחב: $Score = \sum w(g) \times \sqrt{|Gs|}$ (מומלצת ביותר).</li>
+                            <li><strong>SVD Variance Driver:</strong> בוחרת מודולים ששואבים את מקסימום האנרגיה הפיזיקלית של הרקמה ($\sum w(g)$).</li>
+                            <li><strong>Max Frequency:</strong> מתעדפת מודולים שמופיעים במספר הגדול ביותר של וקטורים ללא תלות במשקלם.</li>
+                            <li><strong>Deep Specificity:</strong> מתעדפת קומפלקסים חלבוניים ארוכים וספציפיים (אורכים 5 עד 8).</li>
+                        </ul>
+                    </div>
+                    <div style="border: 1px solid #000000; padding: 12px; border-radius: 4px; background: #FFFFFF;">
+                        <strong>פרמטרי החיתוך והקומבינטוריקה:</strong>
+                        <ul style="padding-right: 20px; margin: 4px 0;">
+                            <li><strong>Min / Max Sequence Length (אורכי חתימה 3-8):</strong> טווח הגדלים של קומפלקסי החלבונים שנכרים בקומבינטוריקה.</li>
+                            <li><strong>Cutoff Loading (|G| &ge; 0.05):</strong> סף המובהקות הביולוגי. חלבון שערכו המוחלט בווקטור נמוך מסף זה מסונן כרעש רקע ואינו נכלל בזנב.</li>
+                            <li><strong>Min G Recurrence (חזרתיות מינימלית &ge; 2):</strong> מסנן קומבינציות בודדות שמופיעות רק בווקטור בודד אחד, ומבטיח שייבחרו אך ורק מודולים ביולוגיים יציבים שחוזרים בלפחות 2 מיקרו-סביבות.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; font-size: 1.25rem; font-weight: bold; border-bottom: 2px solid #000000; padding-bottom: 8px;">
+                    3. הסבר על קבצי הפלט והמדדים המופקים (Output Deliverables & Metrics)
+                </h3>
+                <div style="font-size: 0.9rem; line-height: 1.7;">
+                    <p style="margin: 6px 0;"><strong>מה זה Exact Sign Sequence (ES)?</strong> חתימת חלבונים בעלת קוטביות רגולטורית קשיחה: (+) מסמל ביטוי יתר, (-) מסמל דיכוי ממוקד. האלגוריתם אוכף התאמה מלאה בכיוון ישר (+) או הפוך (-) ושולל כל מודול שיש בו סתירת סימנים אפילו בחלבון בודד.</p>
+                    <p style="margin: 6px 0;"><strong>Universe Coverage (%):</strong> אחוז וקטורי המיקרו-סביבה שכוסו על ידי מודולי ה-ES שנבחרו (ב-120 מגיע ל-99.86% וב-PDE ל-100%).</p>
+                    <p style="margin: 6px 0;"><strong>Kinetic Variance (%):</strong> אחוז האנרגיה הקינטית של סטיית הרקמה שהוסברה על ידי הרכיבים הנבחרים.</p>
+                    <p style="margin: 6px 0;"><strong>Reconstruction Fidelity (R²) & Compression Loss (ΔR²):</strong> בודק עד כמה שחזור ביטוי החלבונים מתוך מודולי ה-ES המכווצים נאמן למקור ברמת התא הבודד. ירידה של $\Delta R^2 < 0.05$ מעידה על שחזור ברמת דיוק עליונה (High Fidelity).</p>
+                    <p style="margin: 6px 0;"><strong>Conflict-Free Matrix:</strong> מטריצת הקצאה חד-חד-ערכית המבטיחה ששום וקטור ביולוגי לא ייספר פעמיים באף מודול (0 כפילויות).</p>
+                </div>
+            </div>
+            """)
+
+            with gr.Row():
+                template_download = gr.File(
+                    value=TEMPLATE_FILE if os.path.exists(TEMPLATE_FILE) else None,
+                    label="📄 1. הורדת קובץ Template לדוגמה של נתוני קלט (Sample_Input_Template.xlsx)",
+                    interactive=False
+                )
+                dict_download = gr.File(
+                    value=DICT_FILE if os.path.exists(DICT_FILE) else None,
+                    label="📘 2. הורדת מילון נתונים מלא לכל עמודות קבצי הפלט (Deliverables_Data_Dictionary.xlsx)",
+                    interactive=False
+                )
+                demo_zip_download = gr.File(
+                    value=DEMO_ZIP_FILE if os.path.exists(DEMO_ZIP_FILE) else None,
+                    label="📦 3. הורדת חבילת קבצי דוגמה מלאה מוסברת (Demo_Deliverables_Bundle.zip)",
+                    interactive=False
+                )
+
+        # -------------------------------------------------------------
+        # Section 2: Instructions in English
+        # -------------------------------------------------------------
+        with gr.Accordion("📘 English Format Specifications & Guidelines (Click to View)", open=False):
             gr.HTML("""
             <div style="background: #FFFFFF; border: 1px solid #000000; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
                 <h3 style="margin-top: 0; color: #000000 !important; font-size: 1.15rem; font-weight: bold; border-bottom: 1px solid #000000; padding-bottom: 6px;">
-                    How to Format Your Data Without Errors
+                    Supported Input File Formats
                 </h3>
-                <p style="margin: 10px 0; color: #000000 !important; font-size: 0.95rem; line-height: 1.5;">
-                    The algorithm processes single or multiple patient/sample datasets in two standard Excel spreadsheet formats:
-                </p>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0;">
                     <div style="border: 1px solid #000000; padding: 14px; border-radius: 4px; background: #FFFFFF;">
                         <h4 style="margin: 0 0 6px 0; font-weight: bold; color: #000000 !important;">Format A: Surprisal Matrix Workbooks</h4>
@@ -295,20 +390,12 @@ def build_app():
                         </ul>
                     </div>
                 </div>
-                <p style="margin: 8px 0 0 0; color: #000000 !important; font-size: 0.9rem;">
-                    <strong>Tip:</strong> Download the pre-formatted Excel template below to inspect the exact structure and column names.
-                </p>
             </div>
             """)
 
-            with gr.Row():
-                template_download = gr.File(
-                    value=TEMPLATE_FILE if os.path.exists(TEMPLATE_FILE) else None,
-                    label="📄 Download Sample Format Template (Sample_Input_Template.xlsx)",
-                    interactive=False
-                )
-
-        # Dataset Ingestion Section
+        # -------------------------------------------------------------
+        # Section 3: Dataset Ingestion
+        # -------------------------------------------------------------
         gr.Markdown("### 1. Ingest Dataset Files")
         upload_input = gr.File(
             label="Upload Excel File(s) (.xlsx / .xls) or .zip Archive",
@@ -316,7 +403,9 @@ def build_app():
             file_types=[".xlsx", ".xls", ".zip"]
         )
 
-        # Execution Parameters Section
+        # -------------------------------------------------------------
+        # Section 4: Execution Parameters
+        # -------------------------------------------------------------
         gr.Markdown("### 2. Execution Parameters")
         with gr.Row():
             strategy_select = gr.Dropdown(
@@ -344,7 +433,9 @@ def build_app():
         # Summary Metrics Box
         summary_display = gr.HTML()
 
-        # Deliverables Download Section
+        # -------------------------------------------------------------
+        # Section 5: Deliverables Downloads
+        # -------------------------------------------------------------
         gr.Markdown("### 3. Download Generated Master Deliverable Files")
         with gr.Row():
             dl_opt_es = gr.File(label="📄 1. Optimal_ES_Result.xlsx")
