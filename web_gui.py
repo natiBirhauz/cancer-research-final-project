@@ -178,7 +178,7 @@ def create_web_application():
         font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"]
     )
 
-    with gr.Blocks(title="Cancer Research TME Algorithm Workbench", theme=custom_theme) as app:
+    with gr.Blocks(title="Cancer Research TME Algorithm Workbench") as app:
         # Header Section
         gr.Markdown(
             f"""
@@ -310,7 +310,7 @@ def create_web_application():
 
                     with gr.TabItem("📖 User Guide & File Specifications"):
                         gr.Markdown(
-                            """
+                            r"""
                             ## Complete User Guide & Input File Specifications
 
                             ### 1. Supported Input File Formats
