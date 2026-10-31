@@ -7,7 +7,7 @@ A computational framework and interactive Web GUI for analyzing cellular heterog
 ## ⚡ Quick Start: Running the Web GUI
 
 ### Option A: 1-Click Launcher (Windows)
-Simply double-click `Launch_GUI.bat` in the project root folder. The browser will open automatically at `http://127.0.0.1:7860`.
+Double-click `Run_TME_Platform.bat` (or `Launch_GUI.bat`). The launcher automatically connects to GitHub, updates to the latest release, installs any missing dependencies, and opens the browser interface at `http://127.0.0.1:7860`.
 
 ### Option B: Command Line (Cross-Platform)
 ```bash
