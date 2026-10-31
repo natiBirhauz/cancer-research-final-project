@@ -544,24 +544,34 @@ def run_user_pipeline(
             s['Excellent_%'], s['Acceptable_%'], s['Alert_%'], s['Exec_Time_s']
         ])
 
-    ws_es_detail = wb_anc.create_sheet(title=f"Optimal_Strategy_{len(target_strat['selected'])}_ES")
+    # Add detailed breakdown sheets for ALL evaluated strategies
+    strat_sheet_titles = [
+        "Strat_1_SVD_Variance",
+        "Strat_2_Max_Frequency",
+        "Strat_3_Deep_Specificity",
+        "Strat_4_Biological_Seed",
+        "Strat_5_Hybrid_MultiObjective"
+    ]
     headers_es = ['Rank', 'ES_Label', 'Sequence_Length', 'New_G_Covered', 'Direct_Matches_(+)', 'Inverse_Matches_(-)', 'Cumulative_G_Covered', 'Coverage_%', 'New_Variance_Weight', 'Cumulative_Variance_%', 'ROIs_Covered_Count', 'Exact_Sign_Sequence']
-    ws_es_detail.append(headers_es)
 
-    cum_g = 0
-    cum_var = 0.0
-    for rk, es in enumerate(target_strat['selected'], 1):
-        cum_g += len(es['new_g'])
-        cum_var += es['var_gain']
-        d_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '+')
-        i_cnt = sum(1 for gi in es['new_g'] if target_strat['g_assignment'][gi][1][0] == '-')
-        rois_cnt = len(set(g_data[gi]['roi'] for gi in es['new_g']))
-        ws_es_detail.append([
-            rk, es['lbl'], es['len'], len(es['new_g']), d_cnt, i_cnt,
-            cum_g, round(cum_g / total_g * 100, 2) if total_g > 0 else 0,
-            round(es['var_gain'], 4), round(cum_var / total_rois * 100, 2) if total_rois > 0 else 0,
-            rois_cnt, tuple_to_str(es['mod'])
-        ])
+    for idx, strat in enumerate(strategies_eval):
+        title = strat_sheet_titles[idx] if idx < len(strat_sheet_titles) else f"Strat_{idx+1}_Detail"
+        ws_strat = wb_anc.create_sheet(title=title)
+        ws_strat.append(headers_es)
+        cum_g = 0
+        cum_var = 0.0
+        for rk, es in enumerate(strat['selected'], 1):
+            cum_g += len(es['new_g'])
+            cum_var += es['var_gain']
+            d_cnt = sum(1 for gi in es['new_g'] if strat['g_assignment'][gi][1][0] == '+')
+            i_cnt = sum(1 for gi in es['new_g'] if strat['g_assignment'][gi][1][0] == '-')
+            rois_cnt = len(set(g_data[gi]['roi'] for gi in es['new_g']))
+            ws_strat.append([
+                rk, es['lbl'], es['len'], len(es['new_g']), d_cnt, i_cnt,
+                cum_g, round(cum_g / total_g * 100, 2) if total_g > 0 else 0,
+                round(es['var_gain'], 4), round(cum_var / total_rois * 100, 2) if total_rois > 0 else 0,
+                rois_cnt, tuple_to_str(es['mod'])
+            ])
 
     wb_anc.save(anchor_xlsx_path)
     log("Generated deliverable: Anchor_Strategies_Comparison.xlsx", 0.70)
@@ -578,7 +588,7 @@ def run_user_pipeline(
         ws_sum.append([])
         ws_sum.append(['Metric', 'Value'])
         ws_sum.append(['Primary Strategy Applied', target_strat['Anchor_Strategy']])
-        ws_sum.append(['Total Cohort Samples / ROIs', total_rois])
+        ws_sum.append(['Total Input Samples / ROIs', total_rois])
         ws_sum.append(['Total Cellular Microenvironment Vectors (G)', total_g])
         ws_sum.append(['Number of Optimal ES Modules', target_strat['ES_Count']])
         ws_sum.append(['Total G-Vectors Covered', target_strat['Covered_Gs']])

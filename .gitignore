@@ -8,12 +8,15 @@ env/
 venv/
 ENV/
 
-# Temporary / Lock files
+# Temporary & Lock files
 ~$*
 *.tmp
 *.temp
+temp_gui_runs/
+deliverables_temp/
+test_output_gui/
 
-# Data files (Strictly avoid committing large/raw data per instructions)
+# Data & Output Files
 *.xlsx
 *.xls
 *.csv
@@ -25,7 +28,12 @@ ENV/
 *.7z
 *.tar.gz
 
-# Binaries & Media
+# Whitelist essential GUI templates & data dictionaries
+!Sample_Input_Template.xlsx
+!Docs/Sample_Input_Template.xlsx
+!Docs/Deliverables_Data_Dictionary.xlsx
+
+# Binary and Media
 *.exe
 *.dll
 *.so
@@ -37,14 +45,37 @@ ENV/
 *.gif
 *.lnk
 *.url
+*.docx
+*.html
 
-# Project Data Directories
+# Specific Data Directories & Obsolete Folders
 all patients (without isotope)/
 All_Tail_Proteins_Tables/
 Data for algorithm evaluation/
 Tails/
-Archive_Old_Project/Old_Directories/
-Archive_Old_Project/Old_Docs/
+Archive_Old_Project/
+Docs/Demo_Deliverables/
+Evaluation_Results/
+
+# Legacy and Local Evaluation Scripts / Notes
+01_*.py
+02_*.py
+03_*.py
+04_*.py
+05_*.py
+app_gui.py
+build_demo_deliverables.py
+create_sample_template.py
+evaluate_algorithm.py
+generate_cohort_*.py
+generate_documentation_docs.py
+run_full_evaluation_pipeline.py
+run_pipeline.py
+TODO.txt
+Docs/Algorithm_Full_Summary.md
+Docs/Cohort_Comparison_Report.*
+Docs/Cohort_Deliverables_Comparison_Report.*
+Docs/Evaluation_Datasets_Report.html
 
 # IDE & OS
 .vscode/

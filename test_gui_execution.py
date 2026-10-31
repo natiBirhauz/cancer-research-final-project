@@ -1,8 +1,7 @@
 """
 test_gui_execution.py
 ---------------------
-Tests the simplified, clean Web GUI execution function on:
-1. Data for algorithm evaluation (6 PDE samples, 54 Gs)
+Tests the Web GUI execution function on sample input data.
 """
 
 import os

@@ -1,14 +1,10 @@
-# Cancer Research: TME Surprisal Analysis & Exact Sign Sequence (ES) Platform
+# Tumor Microenvironment (TME) Surprisal Analysis & Exact Sign Sequence (ES) Platform
 
-A mathematically grounded computational framework for deciphering cellular heterogeneity in tumor microenvironments (TME). 
-
-The platform decomposes multiplexed single-cell proteomic expression matrices into discrete biological processes, identifies coordinated driver protein modules with strict directional signs (**Exact Sign Sequences - ES**), eliminates regulatory contradictions, and validates reconstruction fidelity at single-cell resolution using the **Determination Coefficient ($R^2$)**.
+A computational framework and interactive Web GUI for analyzing cellular heterogeneity in tumor microenvironments. The platform decomposes single-cell proteomic expression matrices into coordinated biological programs, identifies robust protein co-expression modules with strict regulatory signs (**Exact Sign Sequences - ES**), eliminates directional contradictions, and evaluates reconstruction fidelity at single-cell resolution using determination coefficients ($R^2$).
 
 ---
 
 ## ⚡ Quick Start: Running the Web GUI
-
-The platform includes a modern, browser-based user interface.
 
 ```bash
 # 1. Clone the repository
@@ -16,96 +12,93 @@ git clone https://github.com/natiBirhauz/cancer-research-final-project.git
 cd cancer-research-final-project
 
 # 2. Install dependencies
-pip install numpy pandas openpyxl gradio python-docx
+pip install numpy pandas openpyxl gradio
 
-# 3. Launch the Web GUI
+# 3. Launch the Web application
 python run_gui.py
 ```
-Then open your browser at `http://127.0.0.1:7860`.
+Open your browser at `http://127.0.0.1:7860`.
 
 ---
 
-## 🔬 Core Algorithmic Pipeline
+## 🔬 Algorithm Overview
 
-The framework executes five automated mathematical stages:
+The framework processes proteomic matrices through five stages:
 
 ```text
-[Single-Cell Proteomic Data]
-             │
-             ▼
-[Stage 1: Surprisal Analysis Decomposition] ──► ln(X) = G × Lᵀ  (Eigenvectors & Variance Weights)
-             │
-             ▼
-[Stage 2: Driver Tails & Canonical ES Mining]──► G+/G- Tails & Sign Normalization (ES ≡ -ES)
-             │
-             ▼
-[Stage 3: Zero-Contradiction Sign Matching]  ──► Strict Direct (+) & Inverse (-) Polarity Matching
-             │
-             ▼
-[Stage 4: Multi-Objective Greedy Set Cover]  ──► Score = [Σ w(g)] × √(Count) & Disjoint Partitioning
-             │
-             ▼
-[Stage 5: Conflict-Free Matrix & Single-Cell R²]► 1-to-1 Disjoint Allocation & Single-Cell R² Verification
+[Input Proteomic Data]
+          │
+          ▼
+[1. Surprisal Analysis]       ──► ln(X) = G × Lᵀ (Basis Vectors & Variance Weights)
+          │
+          ▼
+[2. Tail & ES Module Mining]  ──► Extraction of G+/G- Tails & Canonical Inversion (ES ≡ -ES)
+          │
+          ▼
+[3. Sign Consistency Filter]  ──► Anti-Contradiction Rule (Strict Direct + / Inverse - Alignment)
+          │
+          ▼
+[4. Greedy Set Cover]         ──► Multi-Objective Optimization: Score = Variance × √(Count)
+          │
+          ▼
+[5. Single-Cell R² Fidelity]  ──► Conflict-Free Matrix & Cell-Level Determination Coefficient (R²)
 ```
 
-### 1. Thermodynamic Surprisal Analysis Decomposition
-Multiplexed single-cell expression matrices $X$ are decomposed into orthogonal state variables:
-$$\ln(X_{i,j}) = \sum_{\alpha=0}^K G_{i,\alpha} \cdot L_{j,\alpha} = \left( G \times L^T \right)_{i,j}$$
-- **$G_\alpha$ (Process Vectors):** Orthonormal protein basis vectors representing coordinated biological programs.
-- **$L_\alpha$ (Cellular Amplitudes):** Amplitude coordinate of process $\alpha$ across individual cells.
-- **Kinetic Variance Weight $w(g)$:** Normalized physical energy of deviation driving microenvironment states:
-$$w(g) = \frac{\|L_k\|^2}{\sum_{\alpha \ge 1} \|L_\alpha\|^2}$$
+### 1. Surprisal Analysis Decomposition
+Single-cell protein expression matrices $X$ are decomposed into orthogonal state variables:
+$$\ln(X_{i,j}) = \sum_{\alpha=0}^K G_{i,\alpha} \cdot L_{j,\alpha}$$
+- **$G_\alpha$ (Process Vectors):** Orthonormal protein basis vectors representing coordinated programs.
+- **$L_\alpha$ (Cellular Amplitudes):** Cell-level state coordinates.
+- **Variance Weights $w(g)$:** Normalized kinetic energy carried by each process.
 
 ### 2. Driver Tail Extraction & Canonical Sign Sequences
-- **Deviation Tails ($G+ / G-$):** Proteins with loadings exceeding the cutoff threshold $|G_{ip}| \ge 0.05$ represent active processes ($G+$ = upregulation, $G-$ = targeted repression).
-- **Canonical Inversion Invariance ($ES \equiv -ES$):** Eigenvectors are invariant under sign inversion ($G \times L^T = (-G) \times (-L)^T$). Signatures are canonically sorted and polarized to prevent redundant representations.
-- **Combinatorial Mining:** Mines candidate signatures across lengths 3 to 8, filtering singletons to focus strictly on recurring co-expression modules ($\ge 2$ processes).
+- **Deviation Tails ($G+ / G-$):** Proteins with loadings $|G| \ge 0.05$ represent active regulatory drivers ($+$ = upregulation, $-$ = repression).
+- **Inversion Invariance ($ES \equiv -ES$):** Eigenvectors are invariant under sign inversion ($G \times L^T = (-G) \times (-L)^T$). Modules are canonically sorted and polarized.
+- **Combinatorial Mining:** Mines candidate signatures across lengths 3 to 8, filtering singletons to focus on recurring co-expression patterns.
 
-### 3. Anti-Contradiction Rule
-When evaluating whether a candidate ES module matches a biological process:
-1. **Overlap:** Must share at least 2 proteins with the process.
-2. **Direct Match (`+`):** All shared proteins exhibit identical signs.
-3. **Inverse Match (`-`):** All shared proteins exhibit opposite signs.
-4. **Zero Contradictions:** Any contradictory sign (e.g., $P(+)$ vs $P(-)$) immediately invalidates the match.
+### 3. Anti-Contradiction Matching
+When evaluating whether a candidate ES module covers a biological vector:
+- **Direct Match (`+`):** All shared proteins share identical regulatory signs.
+- **Inverse Match (`-`):** All shared proteins share reversed regulatory signs.
+- **Zero Contradictions:** Any discordant sign immediately disqualifies the module.
 
 ### 4. Multi-Objective Greedy Set Cover
-To balance kinetic energy with biological universality, modules are selected greedily via:
+Modules are iteratively selected by optimizing:
 $$\text{Score}(ES) = \left[ \sum_{g \in \text{New}(ES)} w(g) \right] \times \sqrt{|\text{New}(ES)|}$$
-Vectors matched by a selected module are permanently locked, guaranteeing a **100% disjoint allocation** with zero duplicate assignments.
+Vectors covered by selected modules are locked, ensuring a strictly disjoint allocation with zero duplicate assignments.
 
-### 5. Conflict-Free Matrix & Single-Cell $R^2$ Reconstruction
-- **Conflict-Free Matrix:** Produces a strictly disjoint Sample $\times$ Module allocation matrix with zero intra-row duplicates.
-- **Single-Cell Determination Coefficient ($R^2$):**
-$$R^2 = 1 - \frac{\sum_i (X_{i,j} - \hat{X}_{i,j})^2}{\sum_i (X_{i,j} - \bar{X}_j)^2}$$
-- **Compression Penalty ($\Delta R^2$):** $\Delta R^2 = R^2_{full} - R^2_{optimal}$. Measures preservation of original proteomic variance (loss $< 0.05$ indicates high fidelity).
+### 5. Conflict-Free Allocation & Single-Cell $R^2$ Fidelity
+- **Conflict-Free Matrix:** Produces a 1-to-1 disjoint allocation matrix where each vector is assigned to at most one module.
+- **Reconstruction Fidelity ($R^2$):** Measures how accurately the selected ES modules reconstruct single-cell protein expression compared to the full matrix.
+- **Compression Loss ($\Delta R^2$):** $\Delta R^2 = R^2_{full} - R^2_{optimal}$. A loss $< 0.05$ indicates high-fidelity preservation.
 
 ---
 
-## 📂 Supported Input Data Formats
+## 📂 Input Data Formats
 
-The platform ingests two standardized formats (upload as `.xlsx` files, a `.zip` archive, or specify a directory path):
+The Web GUI accepts files via drag-and-drop (`.xlsx` spreadsheets or `.zip` archives containing multiple files):
 
-### Format A: Surprisal Analysis Workbooks
-An Excel file (`.xlsx`) containing two sheets:
-- **`Gvalues`:** Protein loading matrix ($G_0, G_1, \dots, G_k$) across protein marker rows.
-- **`Lambavalues`:** Single-cell amplitude matrix ($L_0, L_1, \dots, L_k$) across individual cell rows.
+### Format A: Surprisal Matrix Workbooks
+An Excel workbook (`.xlsx`) containing two sheets:
+- **`Gvalues`:** Protein loading matrix (rows = proteins, columns = $G_0, G_1, \dots, G_k$).
+- **`Lambavalues`:** Single-cell amplitude matrix (rows = cells, columns = $L_0, L_1, \dots, L_k$).
 
 ### Format B: Tail Proteins Spreadsheets
-An Excel file (`.xlsx`) with columns named `G1+, G1-, G2+, G2-, ..., Gk+, Gk-`, listing the participating protein markers per process tail.
+An Excel workbook (`.xlsx`) with columns named `G1+, G1-, G2+, G2-, ..., Gk+, Gk-`, listing participating proteins per process tail.
 
 ---
 
-## 📦 Generated Master Deliverables
+## 📦 Generated Deliverables
 
-Every analysis run automatically generates 4 standardized deliverable files:
+Every execution produces 4 standardized deliverables and a consolidated download bundle:
 
 | Deliverable File | Description |
 | :--- | :--- |
-| **`Optimal_ES_Result.xlsx`** | Master Set Cover results, conflict-free allocation matrix, and coverage curves. |
-| **`Optimal_ES_Result_Signs_R2.xlsx`** | Comprehensive 8-sheet master report including single-cell $R^2$ reconstruction fidelity. |
-| **`ES_Combinations.csv`** | Catalog of all candidate mined ES signatures, frequency counts, and participating processes. |
-| **`Anchor_Strategies_Comparison.xlsx`** | Benchmark comparison across 6 greedy anchor strategies (Coverage, Variance, $R^2$, Run time). |
-| **`Deliverables_Bundle.zip`** | Consolidated ZIP archive containing all 4 master deliverables for 1-click download. |
+| **`Optimal_ES_Result.xlsx`** | Set Cover results, conflict-free allocation matrix, and cumulative coverage curves. |
+| **`Optimal_ES_Result_Signs_R2.xlsx`** | Master report containing single-cell $R^2$ reconstruction fidelity and protein sign tables. |
+| **`ES_Combinations.csv`** | Comprehensive catalog of all mined candidate ES combinations and recurrence statistics. |
+| **`Anchor_Strategies_Comparison.xlsx`** | Multi-strategy benchmark comparing all 5 anchor algorithms with dedicated detail sheets for each. |
+| **`Deliverables_Bundle.zip`** | Consolidated ZIP archive containing all master deliverables. |
 
 ---
 
@@ -114,21 +107,22 @@ Every analysis run automatically generates 4 standardized deliverable files:
 ```text
 cancer-research-final-project/
 ├── run_gui.py                     # Primary launcher for the Web GUI workbench
-├── web_gui.py                     # Modern Gradio web interface
-├── pipeline_engine.py             # Core mathematical pipeline & deliverable engine
-├── generate_cohort_comparison.py  # Comparative analysis generator
+├── web_gui.py                     # Gradio web application interface
+├── pipeline_engine.py             # Core algorithm engine (mining, set cover, R² evaluation)
+├── test_gui_execution.py          # Automated verification test suite
+├── Sample_Input_Template.xlsx     # Standardized input data template for users
 │
-├── Docs/                          # Documentation, reports & deliverables
-│   ├── Algorithm_Explanation_Guide.md   # Mathematical specification guide
-│   ├── Cohort_Deliverables_Comparison_Report.xlsx # Cross-cohort comparison workbook
-│   ├── Cohort_Deliverables_Comparison_Report.md   # Cross-cohort findings summary
-│   └── algorithm_workflow_schema.svg             # Pipeline architecture vector diagram
+├── Docs/                          # Documentation & reference materials
+│   ├── Deliverables_Data_Dictionary.xlsx  # Complete data dictionary for all deliverables
+│   ├── Algorithm_Explanation_Guide.md     # In-depth algorithmic methodology guide
+│   ├── ES_Combinations_Specification.md   # Exact sign sequence technical specification
+│   └── algorithm_workflow_schema.svg     # Algorithm workflow diagram
 │
-├── .gitignore                     # Strict exclusion of raw patient data and binaries
-└── README.md                      # Project documentation & algorithm guide
+├── .gitignore                     # Git exclusion rules
+└── README.md                      # Project documentation
 ```
 
 ---
 
 ## 📄 License & Attribution
-Academic and research use only. Developed for advanced computational oncology and multiplexed single-cell tissue analysis.
+Academic and research use. Developed for advanced computational oncology and multiplexed single-cell tissue analysis.

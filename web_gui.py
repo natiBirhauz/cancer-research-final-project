@@ -30,13 +30,9 @@ TEMPLATE_FILE = "Sample_Input_Template.xlsx"
 if not os.path.exists(TEMPLATE_FILE):
     TEMPLATE_FILE = os.path.join("Docs", "Sample_Input_Template.xlsx")
 
-DICT_FILE = os.path.join("Docs", "Demo_Deliverables", "Deliverables_Data_Dictionary.xlsx")
+DICT_FILE = os.path.join("Docs", "Deliverables_Data_Dictionary.xlsx")
 if not os.path.exists(DICT_FILE):
-    DICT_FILE = os.path.join("Docs", "Deliverables_Data_Dictionary.xlsx")
-
-DEMO_ZIP_FILE = os.path.join("Docs", "Demo_Deliverables", "Demo_Deliverables_Bundle.zip")
-if not os.path.exists(DEMO_ZIP_FILE):
-    DEMO_ZIP_FILE = os.path.join("Docs", "Demo_Deliverables_Bundle.zip")
+    DICT_FILE = os.path.join("Docs", "Demo_Deliverables", "Deliverables_Data_Dictionary.xlsx")
 
 HEAD_SCRIPT = """
 <script>
@@ -299,12 +295,12 @@ def build_app():
                 <ol style="padding-right: 20px; font-size: 0.95rem; line-height: 1.8;">
                     <li><strong>שלב 1 – הכנת הנתונים:</strong> ודא שהנתונים שלך ערוכים באחד משני הפורמטים הנתמכים:
                         <ul style="padding-right: 20px; margin: 6px 0;">
-                            <li><strong>פורמט א' (מטריצות Raw - מומלץ):</strong> קובץ אקסל המכיל שני גיליונות: גיליון <code>Gvalues</code> (שורות חלבונים, עמודות $G_0..G_k$) וגיליון <code>Lambavalues</code> (שורות תאים בודדים, עמודות $L_0..L_k$).</li>
+                            <li><strong>פורמט א' (מטריצות Raw - Gvalues & Lambavalues):</strong> קובץ אקסל המכיל שני גיליונות: גיליון <code>Gvalues</code> (שורות חלבונים, עמודות G0..Gk) וגיליון <code>Lambavalues</code> (שורות תאים בודדים, עמודות L0..Lk).</li>
                             <li><strong>פורמט ב' (טבלאות Tail):</strong> קובץ אקסל המכיל עמודות זנב כגון <code>G1+, G1-, G2+, G2-...</code> עם שמות החלבונים המשתתפים.</li>
                         </ul>
                     </li>
-                    <li><strong>שלב 2 – טעינת הקבצים:</strong> גרור את קבצי האקסל (או קובץ ZIP המכיל את כל תיקיות החולים) לתיבת ההעלאה מטה. המערכת קוראת את כל הקבצים וממזגת אותם אוטומטית.</li>
-                    <li><strong>שלב 3 – בחירת פרמטרים:</strong> בחר באסטרטגיית העוגן הרצויה (ברירת המחדל המומלצת היא Hybrid) והגדר את אורך החתימות הרצוי.</li>
+                    <li><strong>שלב 2 – טעינת הקבצים:</strong> גרור את קבצי האקסל (או קובץ ZIP המכיל את כל התיקיות) לתיבת ההעלאה מטה. המערכת קוראת את כל הקבצים וממזגת אותם אוטומטית.</li>
+                    <li><strong>שלב 3 – בחירת פרמטרים:</strong> בחר באסטרטגיית העוגן להפקת קבצי המאסטר והגדר את טווח אורכי החתימות הרצוי (אורכי רצף 3 עד 8).</li>
                     <li><strong>שלב 4 – הרצה:</strong> לחץ על כפתור <code>▶ Run Algorithm & Generate Deliverables</code>.</li>
                     <li><strong>שלב 5 – הורדת התוצאות:</strong> מיד בסיום יופיעו כפתורי הורדה ל-4 קבצי המאסטר וקובץ ZIP מאוחד.</li>
                 </ol>
@@ -315,10 +311,10 @@ def build_app():
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; font-size: 0.9rem;">
                     <div style="border: 1px solid #000000; padding: 12px; border-radius: 4px; background: #FFFFFF;">
                         <strong>Primary Anchor Strategy (אסטרטגיית העוגן):</strong><br>
-                        מגדירה את פונקציית המטרה המתמטית של פותר ה-Set Cover הגרידי:
+                        מגדירה את פונקציית המטרה המתמטית של פותר ה-Set Cover הגרידי עבור קבצי המאסטר:
                         <ul style="padding-right: 20px; margin: 4px 0;">
-                            <li><strong>Hybrid Multi-Objective:</strong> מאזנת בין מקסימום שונות קינטית לשימור ביולוגי רחב: $Score = \sum w(g) \times \sqrt{|Gs|}$ (מומלצת ביותר).</li>
-                            <li><strong>SVD Variance Driver:</strong> בוחרת מודולים ששואבים את מקסימום האנרגיה הפיזיקלית של הרקמה ($\sum w(g)$).</li>
+                            <li><strong>Hybrid Multi-Objective:</strong> פונקציית מטרה המאזנת בין שונות קינטית לחזרתיות ביולוגית: Score = Variance x sqrt(Count).</li>
+                            <li><strong>SVD Variance Driver:</strong> בוחרת מודולים הממקסמים את סכום משקלי ה-SVD והשונות הקינטית: Score = Sum of Weights.</li>
                             <li><strong>Max Frequency:</strong> מתעדפת מודולים שמופיעים במספר הגדול ביותר של וקטורים ללא תלות במשקלם.</li>
                             <li><strong>Deep Specificity:</strong> מתעדפת קומפלקסים חלבוניים ארוכים וספציפיים (אורכים 5 עד 8).</li>
                         </ul>
@@ -338,10 +334,11 @@ def build_app():
                 </h3>
                 <div style="font-size: 0.9rem; line-height: 1.7;">
                     <p style="margin: 6px 0;"><strong>מה זה Exact Sign Sequence (ES)?</strong> חתימת חלבונים בעלת קוטביות רגולטורית קשיחה: (+) מסמל ביטוי יתר, (-) מסמל דיכוי ממוקד. האלגוריתם אוכף התאמה מלאה בכיוון ישר (+) או הפוך (-) ושולל כל מודול שיש בו סתירת סימנים אפילו בחלבון בודד.</p>
-                    <p style="margin: 6px 0;"><strong>Universe Coverage (%):</strong> אחוז וקטורי המיקרו-סביבה שכוסו על ידי מודולי ה-ES שנבחרו (ב-120 מגיע ל-99.86% וב-PDE ל-100%).</p>
+                    <p style="margin: 6px 0;"><strong>Universe Coverage (%):</strong> אחוז וקטורי המיקרו-סביבה שכוסו על ידי מודולי ה-ES מתוך סך הווקטורים במאגר שהוזן.</p>
                     <p style="margin: 6px 0;"><strong>Kinetic Variance (%):</strong> אחוז האנרגיה הקינטית של סטיית הרקמה שהוסברה על ידי הרכיבים הנבחרים.</p>
-                    <p style="margin: 6px 0;"><strong>Reconstruction Fidelity (R²) & Compression Loss (ΔR²):</strong> בודק עד כמה שחזור ביטוי החלבונים מתוך מודולי ה-ES המכווצים נאמן למקור ברמת התא הבודד. ירידה של $\Delta R^2 < 0.05$ מעידה על שחזור ברמת דיוק עליונה (High Fidelity).</p>
+                    <p style="margin: 6px 0;"><strong>Reconstruction Fidelity (R²) & Compression Loss (Delta R²):</strong> מדד למידת הדיוק של שחזור ביטוי החלבונים מתוך מודולי ה-ES המכווצים ביחס למקור ברמת התא הבודד. ירידה של Delta R2 נמוכה מ-0.05 מעידה על שחזור ברמת דיוק עליונה (High Fidelity).</p>
                     <p style="margin: 6px 0;"><strong>Conflict-Free Matrix:</strong> מטריצת הקצאה חד-חד-ערכית המבטיחה ששום וקטור ביולוגי לא ייספר פעמיים באף מודול (0 כפילויות).</p>
+                    <p style="margin: 6px 0;"><strong>השוואת אסטרטגיות עוגן (Anchor_Strategies_Comparison.xlsx):</strong> הקובץ מכיל השוואה סימולטנית מלאה של כל 5 אסטרטגיות העוגן בגיליון Anchor_Strategies_Overview, וכן גיליונות פירוט ייעודיים לכל אסטרטגיה (Strat_1 עד Strat_5) המציגים את כל מודולי ה-ES שנבחרו עבורה. כל 5 האסטרטגיות מחושבות ומושוות אוטומטית בכל הרצה.</p>
                 </div>
             </div>
             """)
@@ -355,11 +352,6 @@ def build_app():
                 dict_download = gr.File(
                     value=DICT_FILE if os.path.exists(DICT_FILE) else None,
                     label="📘 2. הורדת מילון נתונים מלא לכל עמודות קבצי הפלט (Deliverables_Data_Dictionary.xlsx)",
-                    interactive=False
-                )
-                demo_zip_download = gr.File(
-                    value=DEMO_ZIP_FILE if os.path.exists(DEMO_ZIP_FILE) else None,
-                    label="📦 3. הורדת חבילת קבצי דוגמה מלאה מוסברת (Demo_Deliverables_Bundle.zip)",
                     interactive=False
                 )
 
