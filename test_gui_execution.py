@@ -10,9 +10,11 @@ from web_gui import execute_pipeline_job
 
 def test_run():
     print("Running GUI execution on 'Data for algorithm evaluation'...")
+    # Gather files
+    import glob
+    eval_files = glob.glob('Data for algorithm evaluation/*/data.xlsx')
     res = execute_pipeline_job(
-        uploaded_files=None,
-        local_folder='Data for algorithm evaluation',
+        uploaded_files=eval_files,
         strategy='Hybrid Multi-Objective (Variance x Count)',
         min_len=3,
         max_len=8,

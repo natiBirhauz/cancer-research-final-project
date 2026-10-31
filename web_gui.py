@@ -132,7 +132,6 @@ input, textarea, select {
 
 def execute_pipeline_job(
     uploaded_files,
-    local_folder,
     strategy,
     min_len,
     max_len,
@@ -141,7 +140,7 @@ def execute_pipeline_job(
     progress=gr.Progress(track_tqdm=False)
 ):
     """Executes the pipeline and produces the 4 master deliverables."""
-    # 1. Parse uploaded files / directory
+    # 1. Parse uploaded files
     file_list = []
     if uploaded_files:
         if isinstance(uploaded_files, list):
@@ -149,13 +148,11 @@ def execute_pipeline_job(
         else:
             file_list = [uploaded_files.name if hasattr(uploaded_files, 'name') else str(uploaded_files)]
 
-    folder_target = local_folder.strip() if (local_folder and local_folder.strip()) else None
-
-    if not file_list and not folder_target:
+    if not file_list:
         error_html = """
         <div style="background: #FFFFFF; border: 2px solid #000000; border-radius: 6px; padding: 16px; margin: 15px 0;">
             <p style="margin: 0; color: #000000 !important; font-weight: bold; font-size: 1rem;">
-                [ERROR] No dataset provided. Please upload Excel spreadsheet(s), a .zip archive, or enter a valid local directory path.
+                [ERROR] No dataset provided. Please upload Excel spreadsheet(s) (.xlsx) or a .zip archive containing the dataset files.
             </p>
         </div>
         """
@@ -170,8 +167,8 @@ def execute_pipeline_job(
 
     try:
         summary, _, _, _, _ = run_user_pipeline(
-            file_paths=file_list if file_list else None,
-            folder_path=folder_target,
+            file_paths=file_list,
+            folder_path=None,
             min_es_length=int(min_len),
             max_es_length=int(max_len),
             threshold=float(threshold),
@@ -313,17 +310,11 @@ def build_app():
 
         # Dataset Ingestion Section
         gr.Markdown("### 1. Ingest Dataset Files")
-        with gr.Row():
-            upload_input = gr.File(
-                label="Upload Excel File(s) (.xlsx / .xls) or .zip Archive",
-                file_count="multiple",
-                file_types=[".xlsx", ".xls", ".zip"]
-            )
-            folder_input = gr.Textbox(
-                label="Or Enter Local Directory Path on Disk",
-                placeholder="e.g., C:/Datasets/Cancer_Cohort",
-                lines=2
-            )
+        upload_input = gr.File(
+            label="Upload Excel File(s) (.xlsx / .xls) or .zip Archive",
+            file_count="multiple",
+            file_types=[".xlsx", ".xls", ".zip"]
+        )
 
         # Execution Parameters Section
         gr.Markdown("### 2. Execution Parameters")
@@ -369,7 +360,6 @@ def build_app():
             fn=execute_pipeline_job,
             inputs=[
                 upload_input,
-                folder_input,
                 strategy_select,
                 min_len_input,
                 max_len_input,
