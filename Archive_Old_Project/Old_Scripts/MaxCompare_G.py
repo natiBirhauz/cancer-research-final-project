@@ -197,7 +197,7 @@ def analyze_maximal_sequences(tails_folder, g_folder, similarity_threshold=0.80)
     df_results = df_results.sort_values(by=['Maximal Shared Sequences', 'Average Similarity (%)'], ascending=[False, False])
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    excel_filename = f'Maximal_Sequences_Report_{timestamp}.xlsx'
+    excel_filename = f'Maximal_Sequences_ReportG_{timestamp}.xlsx'
     
     with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
         df_results.to_excel(writer, index=False)

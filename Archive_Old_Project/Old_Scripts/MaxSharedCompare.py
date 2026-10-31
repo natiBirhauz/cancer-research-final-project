@@ -1,3 +1,12 @@
+"""
+MaxSharedCompare.py
+-------------------
+Identifies maximal shared biological sequences across patient profiles.
+Uses ONLY 'tail_proteins' files (Sparse Vectors). Unlisted proteins are set to 0.
+Dynamically Normalizes each patient's data (MaxAbs) and extracts proteins 
+with the HIGHEST MATCH PERCENTAGE.
+"""
+
 import os
 import glob
 import re
@@ -10,8 +19,7 @@ from openpyxl.styles import Alignment
 
 def get_unique_proteins(folder_path):
     """
-    Scans all dataset files to build a universal list of unique proteins.
-    This creates the standardized feature space for vector comparisons.
+    Scans only the Tails files to build a dictionary of the dominant proteins.
     """
     all_files = glob.glob(os.path.join(folder_path, '*.csv')) + \
                 glob.glob(os.path.join(folder_path, '*.xlsx'))
@@ -20,7 +28,7 @@ def get_unique_proteins(folder_path):
     for file in all_files:
         try:
             df = pd.read_csv(file) if file.lower().endswith('.csv') else pd.read_excel(file)
-            # Find columns that represent protein features (excluding the numeric 'Value' columns)
+            # מוצא את העמודות המכילות שמות חלבונים (ולא את עמודות ה-Value)
             protein_cols = [col for col in df.columns if 'value' not in col.lower()]
             
             for col in protein_cols:
@@ -33,12 +41,11 @@ def get_unique_proteins(folder_path):
 
 def parse_patient_matrix(file_path, unified_proteins):
     """
-    Converts a patient's raw data file into a mathematical matrix based on the unified protein list.
-    Preserves negative values to allow for anti-correlation detection.
+    Reads the Tail file and builds the vectors.
+    Proteins not present in the Tail get a value of 0.0.
     """
     df = pd.read_csv(file_path) if file_path.lower().endswith('.csv') else pd.read_excel(file_path)
     
-    # Identify all G-components (e.g., G1, G2, etc.)
     g_cols = [col for col in df.columns if re.match(r'G\d+[+-]', col)]
     g_numbers = sorted(list(set([int(re.search(r'G(\d+)', col).group(1)) for col in g_cols])))
     
@@ -51,14 +58,12 @@ def parse_patient_matrix(file_path, unified_proteins):
         minus_col = f"G{g_num}-"
         minus_val_col = [c for c in df.columns if c.startswith(f"G{g_num}-") and 'val' in c.lower()]
         
-        # Process positive drivers
         if plus_col in df.columns and plus_val_col:
             for _, row in df[[plus_col, plus_val_col[0]]].dropna().iterrows():
                 prot, val = str(row[plus_col]).strip(), float(row[plus_val_col[0]])
                 if prot in prot_idx: 
                     matrix[i, prot_idx[prot]] += val
                     
-        # Process negative drivers (values are appended as-is to preserve raw data signs)
         if minus_col in df.columns and minus_val_col:
             for _, row in df[[minus_col, minus_val_col[0]]].dropna().iterrows():
                 prot, val = str(row[minus_col]).strip(), float(row[minus_val_col[0]])
@@ -67,65 +72,73 @@ def parse_patient_matrix(file_path, unified_proteins):
                     
     return matrix, g_numbers
 
-def get_shared_driving_proteins(vec_a, vec_b, unified_proteins, top_n=7):
+def get_highest_matching_proteins(vec_a, vec_b, unified_proteins, is_direct, min_norm_threshold=0.05):
     """
-    Extracts the most influential proteins that are actively expressed in BOTH vectors.
-    Formats the output for the final report.
+    Normalizes both vectors to [-1.0, 1.0] to ensure fair comparison,
+    then extracts proteins sorted by their MATCH PERCENTAGE.
     """
-    shared_proteins = []
+    matching_proteins = []
+    
+    # --- שלב הנרמול (MaxAbs Scaler) לכל חולה בנפרד ---
+    max_a = np.max(np.abs(vec_a))
+    max_b = np.max(np.abs(vec_b))
+    
+    norm_vec_a = vec_a / max_a if max_a > 0 else vec_a
+    norm_vec_b = vec_b / max_b if max_b > 0 else vec_b
+    
     for idx, prot in enumerate(unified_proteins):
-        val_a, val_b = vec_a[idx], vec_b[idx]
+        val_a = norm_vec_a[idx]
+        val_b = norm_vec_b[idx]
         
-        # Protein must be active in both patients to be considered a shared driver
-        if val_a != 0 and val_b != 0:
-            shared_proteins.append({
-                'protein': prot,
-                'impact': abs(val_a) + abs(val_b),
-                'val_a': val_a, 
-                'val_b': val_b
-            })
+        # סינון: רק אם לחלבון יש ביטוי של לפחות 5% אצל אחד החולים
+        if max(abs(val_a), abs(val_b)) >= min_norm_threshold:
             
-    shared_proteins.sort(key=lambda x: x['impact'], reverse=True)
-    return " | ".join([f"{p['protein']} ({p['val_a']:.2f}, {p['val_b']:.2f})" for p in shared_proteins[:top_n]])
-
-def has_sufficient_overlap(vec_a, vec_b, threshold_ratio=0.10):
-    """
-    Validates that the vectors share a minimum percentage of active proteins,
-    preventing high cosine similarity scores driven by empty features.
-    """
-    active_a = set(np.where(vec_a != 0)[0])
-    active_b = set(np.where(vec_b != 0)[0])
+            compare_b = val_b if is_direct else -val_b
+            
+            # חישוב אחוז ההתאמה
+            max_val = max(abs(val_a), abs(compare_b))
+            diff = abs(val_a - compare_b)
+            
+            if max_val > 0:
+                match_pct = (1.0 - (diff / max_val)) * 100
+            else:
+                match_pct = 0.0
+                
+            # חלבון שלא מופיע אצל אחד מהם (ערך 0) יקבל אוטומטית 0% התאמה וייפול כאן
+            if match_pct > 0:
+                matching_proteins.append({
+                    'protein': prot,
+                    'match_pct': match_pct,
+                    'val_a': val_a, 
+                    'val_b': val_b
+                })
+                
+    matching_proteins.sort(key=lambda x: (x['match_pct'], abs(x['val_a'])), reverse=True)
     
-    if not active_a or not active_b:
-        return False
+    formatted_prots = []
+    for p in matching_proteins:
+        formatted_prots.append(f"{p['protein']} ({p['match_pct']:.1f}% Match | Norm_A: {p['val_a']:+.3f}, Norm_B: {p['val_b']:+.3f})")
         
-    common_proteins = active_a.intersection(active_b)
-    min_len = min(len(active_a), len(active_b))
-    
-    return (len(common_proteins) / min_len) >= threshold_ratio
+    return " | ".join(formatted_prots) if formatted_prots else "No shared significant proteins"
 
 def extract_patient_id(filename):
-    """Cleans the filename to keep just the patient identifier."""
-    return filename.replace('tail_proteins_', '').replace('.xlsx', '').replace('.csv', '')
+    name = filename.replace('_tail_proteins', '').replace('.xlsx', '').replace('.csv', '')
+    return name
 
-def analyze_maximal_sequences(folder_path, similarity_threshold=0.80, overlap_threshold=0.10):
-    """
-    Main pipeline: Analyzes all patient profiles and extracts the maximal 
-    shared biological sequences using a greedy 1-to-1 matching algorithm.
-    """
-    print("Initializing environment and building unified protein dictionary...")
-    unified_proteins = get_unique_proteins(folder_path)
+def analyze_maximal_sequences(tails_folder, similarity_threshold=0.80):
+    print("Building universal protein dictionary from Tails tables...")
+    unified_proteins = get_unique_proteins(tails_folder)
     
-    all_files = glob.glob(os.path.join(folder_path, '*.csv')) + glob.glob(os.path.join(folder_path, '*.xlsx'))
+    all_files = glob.glob(os.path.join(tails_folder, '*.csv')) + glob.glob(os.path.join(tails_folder, '*.xlsx'))
     
-    print("Parsing patient matrices...")
+    print("Parsing patient matrices (using Sparse Vectors)...")
     patients_data = {}
     for file in all_files:
         p_name = extract_patient_id(os.path.basename(file))
         matrix, g_numbers = parse_patient_matrix(file, unified_proteins)
         patients_data[p_name] = {'g_nums': g_numbers, 'matrix': matrix}
-        
-    print(f"Executing sequence matching (Sim >= {similarity_threshold*100}%, Overlap >= {overlap_threshold*100}%)...")
+            
+    print(f"Executing sequence matching based on normalized percentage similarity...")
     patient_names = list(patients_data.keys())
     results = []
     
@@ -138,39 +151,36 @@ def analyze_maximal_sequences(folder_path, similarity_threshold=0.80, overlap_th
             if len(matA) == 0 or len(matB) == 0: 
                 continue
             
-            # Calculate cosine similarity matrix between all components of Patient A and Patient B
             sim_matrix = cosine_similarity(matA, matB)
             
-            # Flatten and sort correlations
             sim_list = []
             for r in range(len(gA)):
                 for c in range(len(gB)):
                     sim_list.append((abs(sim_matrix[r, c]), sim_matrix[r, c], r, c))
             sim_list.sort(key=lambda x: x[0], reverse=True)
             
-            # Greedy 1-to-1 matching to avoid double counting components
             used_A, used_B = set(), set()
             shared_components = []
             
             for abs_sim, raw_sim, r, c in sim_list:
                 if abs_sim >= similarity_threshold:
                     if r not in used_A and c not in used_B:
-                        if has_sufficient_overlap(matA[r], matB[c], overlap_threshold):
-                            used_A.add(r)
-                            used_B.add(c)
-                            
-                            top_prots = get_shared_driving_proteins(matA[r], matB[c], unified_proteins)
-                            match_type = "Direct (+)" if raw_sim > 0 else "Inverse (-)"
-                            
-                            shared_components.append({
-                                'G_A': f"G{gA[r]}",
-                                'G_B': f"G{gB[c]}",
-                                'Sim': abs_sim * 100,
-                                'Type': match_type,
-                                'Proteins': top_prots
-                            })
+                        used_A.add(r)
+                        used_B.add(c)
+                        
+                        is_direct = (raw_sim > 0)
+                        match_type = "Direct (+)" if is_direct else "Inverse (-)"
+                        
+                        top_prots = get_highest_matching_proteins(matA[r], matB[c], unified_proteins, is_direct)
+                        
+                        shared_components.append({
+                            'G_A': f"G{gA[r]}",
+                            'G_B': f"G{gB[c]}",
+                            'Sim': abs_sim * 100,
+                            'Type': match_type,
+                            'Proteins': top_prots
+                        })
             
-            # Aggregate findings for this patient pair
             if shared_components:
                 avg_sim = np.mean([x['Sim'] for x in shared_components])
                 details_text = "\n".join([f"{x['G_A']} <-> {x['G_B']} ({x['Sim']:.1f}%, {x['Type']}) | {x['Proteins']}" for x in shared_components])
@@ -180,31 +190,29 @@ def analyze_maximal_sequences(folder_path, similarity_threshold=0.80, overlap_th
                     'Patient B': pB,
                     'Maximal Shared Sequences': len(shared_components),
                     'Average Similarity (%)': avg_sim,
-                    'Match Details (Components & Shared Proteins)': details_text
+                    'Match Details (Normalized Protein Match %)': details_text
                 })
 
     if not results:
-        print("No matches found meeting the current threshold criteria.")
+        print("No matches found.")
         return
 
     print("Compiling final report...")
     df_results = pd.DataFrame(results)
     df_results = df_results.sort_values(by=['Maximal Shared Sequences', 'Average Similarity (%)'], ascending=[False, False])
     
-    # Generate timestamped filename to avoid PermissionError if an older file is open
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     excel_filename = f'Maximal_Sequences_Report_{timestamp}.xlsx'
     
     with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
         df_results.to_excel(writer, index=False)
         worksheet = writer.sheets['Sheet1']
-        # Enable text wrapping for the details column
         for row in worksheet.iter_rows(min_row=2, max_col=5, max_row=len(df_results)+1):
             row[4].alignment = Alignment(wrap_text=True)
 
     print(f"Success! Report generated: {excel_filename}")
 
 if __name__ == "__main__":
-    # Define dataset location and parameters
-    DATASET_FOLDER = 'tails' 
-    analyze_maximal_sequences(DATASET_FOLDER, similarity_threshold=0.80, overlap_threshold=0.10)
+    # הקוד דורש כעת רק את תיקיית הזנבות כמו בעבר
+    TAILS_FOLDER = 'All_Tail_Proteins_Tables'
+    analyze_maximal_sequences(TAILS_FOLDER, similarity_threshold=0.80)

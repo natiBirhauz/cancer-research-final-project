@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מפרט ותיעוד מלא: טבלת ES_Combinations</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #1f497d;
+            border-bottom: 3px solid #2e75b6;
+            padding-bottom: 12px;
+            margin-top: 0;
+            font-size: 26px;
+        }
+        .subtitle {
+            color: #595959;
+            font-size: 15px;
+            margin-top: -8px;
+            margin-bottom: 25px;
+        }
+        h2 {
+            color: #2e75b6;
+            margin-top: 35px;
+            font-size: 20px;
+            border-right: 4px solid #1f497d;
+            padding-right: 12px;
+        }
+        h3 {
+            color: #1f497d;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        p, li {
+            font-size: 15px;
+            color: #333333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        th {
+            background-color: #1f497d;
+            color: #ffffff;
+            text-align: right;
+            padding: 12px 14px;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+        .code-block {
+            background-color: #f1f4f8;
+            border: 1px solid #d0dbe5;
+            border-radius: 6px;
+            padding: 14px 18px;
+            font-family: Consolas, monospace;
+            font-size: 13.5px;
+            direction: ltr;
+            text-align: left;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .highlight {
+            background-color: #e8f4fd;
+            border-right: 4px solid #2e75b6;
+            padding: 14px 18px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>מפרט ותיעוד מלא: טבלת קומבינציות החלבונים (ES Combinations)</h1>
+    <div class="subtitle">הסבר מקיף על 9 העמודות, משמעותן, אופן החישוב ודוגמאות מתוך הנתונים</div>
+
+    <h2>1. רקע: מהו Exact Sequence (ES)?</h2>
+    <p>
+        בפרויקט זה, רצף ES (Exact Sequence) מוגדר כ<strong>קבוצה ייחודית של שמות חלבונים</strong> (Set) החוזרת על עצמה בווקטורי G שונים אצל חולים שונים. בהתאם להגדרה המעודכנת:
+    </p>
+    <ul>
+        <li><strong>ללא הבדל בין סימן פלוס (+) למינוס (-)</strong>: שמות החלבונים בלבד נבדקים לצורך זיהוי התבנית המשותפת.</li>
+        <li><strong>ללא תלות בסדר הופעת החלבונים</strong>: החלבונים ממוינים אלפביתית ומיוצגים כקבוצה אחידה.</li>
+        <li><strong>התאמה לווקטור G</strong>: רצף ES מוכל בווקטור G אם כל חלבוני ה-ES קיימים בתוך וקטור ה-G הנבדק.</li>
+    </ul>
+
+    <h2>2. ריכוז 9 העמודות בטבלת ES_Combinations</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 18%;">שם העמודה</th>
+                <th style="width: 12%;">סוג נתון</th>
+                <th style="width: 15%;">טווח ערכים</th>
+                <th>משמעות והסבר</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>ES_ID</strong></td>
+                <td><span class="badge">String</span></td>
+                <td>ES1 – ES78737</td>
+                <td>מזהה ייחודי לכל קומבינציית ES. הטבלה ממוינת בסדר יורד של דומיננטיות (מספר חולים, כמות G וכמות חלבונים).</td>
+            </tr>
+            <tr>
+                <td><strong>Protein_Count</strong></td>
+                <td><span class="badge">Integer</span></td>
+                <td>2 – 8</td>
+                <td>מספר החלבונים המרכיבים את רצף ה-ES (אורך הרצף).</td>
+            </tr>
+            <tr>
+                <td><strong>Unique_Patients_Count</strong></td>
+                <td><span class="badge">Integer</span></td>
+                <td>1 – 19</td>
+                <td>מספר המטופלים הייחודיים השונים (P1-P20) שבהם הרצף מופיע לפחות בווקטור G אחד. מדד מפתח לשיתוף גלובלי.</td>
+            </tr>
+            <tr>
+                <td><strong>ROIs_Covered_Count</strong></td>
+                <td><span class="badge">Integer</span></td>
+                <td>1 – 120</td>
+                <td>מספר בדיקות ה-ROI (מתוך 120 בדיקות) שבהן ה-ES מופיע. מדד לתפוצה מרחבית ברקמה.</td>
+            </tr>
+            <tr>
+                <td><strong>G_Values_Covered</strong></td>
+                <td><span class="badge">Integer</span></td>
+                <td>1 – 372</td>
+                <td>סך כל וקטורי ה-G שבהם הרצף מוכל (מתוך 2,778 וקטורי G הקיימים בדאטה).</td>
+            </tr>
+            <tr>
+                <td><strong>Avg_Protein_Coverage_Per_G_%</strong></td>
+                <td><span class="badge">Float (%)</span></td>
+                <td>25.0% – 100.0%</td>
+                <td>ממוצע אחוזי כיסוי החלבונים על פני כל וקטורי ה-G שבהם ה-ES מופיע (כמה אחוז מתוך הווקטור מוסבר ע"י ה-ES).</td>
+            </tr>
+            <tr>
+                <td><strong>Protein_Set</strong></td>
+                <td><span class="badge">String</span></td>
+                <td>שמות חלבונים</td>
+                <td>שמות החלבונים המרכיבים את ה-ES, ממוינים אלפביתית ומופרדים ב- | (ללא סימנים).</td>
+            </tr>
+            <tr>
+                <td><strong>Tails_Detail</strong></td>
+                <td><span class="badge">Text</span></td>
+                <td>פירוט היררכי</td>
+                <td>פירוט מלא ומבני של כל ה-ROIs וכל וקטורי ה-G הספציפיים שבהם ה-ES מופיע, כולל יחסי חלבונים ואחוז כיסוי מדויק.</td>
+            </tr>
+            <tr>
+                <td><strong>Participating_G_Values</strong></td>
+                <td><span class="badge">Text</span></td>
+                <td>מפתחות G</td>
+                <td>רשימת כל מזהי ה-G המלאים (למשל P10_ROI_48_G12) שבהם ה-ES מופיע, מופרדים ב- |.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>3. אופן החישוב והנוסחאות</h2>
+
+    <h3>א. כיסוי חלבונים ברמת וקטור G בודד (Per-G Protein Coverage):</h3>
+    <p>
+        כאשר רצף ES בן <em>k</em> חלבונים מופיע בווקטור <em>G<sub>i</sub></em> המכיל סך הכל <em>N<sub>i</sub></em> חלבונים, אחוז הכיסוי שלו על אותו וקטור ספציפי מחושב כיחס בין כמות חלבוני ה-ES לסך חלבוני הווקטור:
+    </p>
+    <div class="highlight">
+        <strong>Coverage(ES, G<sub>i</sub>) = (k / N<sub>i</sub>) × 100%</strong>
+    </div>
+    <p>
+        <strong>דוגמה מוחשית מתוך הנתונים  :</strong><br>
+        נתבונן ברצף <strong>ES733</strong> המורכב מ-3 חלבונים: <code>CD163 | CD21 | CXCR3</code>.<br>
+        בווקטור <strong>P10_ROI_48_G12</strong> ישנם 8 חלבונים בסך הכל (CD163, CD21, CD3, CD68, CD8, CXCL12, CXCR3, PD1).<br>
+        הכיסוי של רצף ה-ES על וקטור זה הוא בדיוק: <strong>3 חלבונים חלקי 8 = 37.5%</strong>.
+    </p>
+
+    <h3>ב. חישוב עמודת Avg_Protein_Coverage_Per_G_%:</h3>
+    <p>
+        עבור רצף ES המופיע ב-<em>M</em> וקטורי G שונים (ברחבי חולים ו-ROIs שונים), המדד מחשב את ממוצע אחוזי הכיסוי שלו:
+    </p>
+    <div class="highlight">
+        <strong>Avg_Protein_Coverage_Per_G_% = (1 / M) × ∑ (k / N<sub>i</sub> × 100%)</strong>
+    </div>
+
+    <h3>ג. מבנה עמודת Tails_Detail:</h3>
+    <p>העמודה מציגה פירוט היררכי מסודר ומדויק עבור כל ROI שבו ה-ES מופיע:</p>
+    <div class="code-block">P10_ROI_48(1/19G | G12:3/8=37.5%); P20_ROI_99(3/28G | G9:3/7=42.9%, G10:3/6=50.0%, G12:3/6=50.0%)</div>
+    <ul>
+        <li><strong>P10_ROI_48</strong>: מזהה ה-ROI.</li>
+        <li><strong>(1/19G)</strong>: כמות וקטורי ה-G המכוסים ב-ROI זה (1) מתוך סך וקטורי ה-G הקיימים באותו ROI (19).</li>
+        <li><strong>G12:3/8=37.5%</strong>: וקטור G12 מכיל 8 חלבונים, מתוכם 3 מכוסים ע"י ה-ES – שהם 37.5% כיסוי.</li>
+    </ul>
+
+    <h2>4. התפלגות קומבינציות ה-ES לפי אורך הרצף (78,737 קומבינציות)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>אורך רצף (Protein_Count)</th>
+                <th>כמות קומבינציות ES בטבלה</th>
+                <th>ממוצע כיסוי חלבונים בווקטור</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>2 חלבונים</td><td>724</td><td>33.6%</td></tr>
+            <tr><td>3 חלבונים</td><td>7,128</td><td>48.2%</td></tr>
+            <tr><td>4 חלבונים</td><td>22,481</td><td>61.5%</td></tr>
+            <tr><td>5 חלבונים</td><td>27,249</td><td>73.4%</td></tr>
+            <tr><td>6 חלבונים</td><td>15,906</td><td>83.9%</td></tr>
+            <tr><td>7 חלבונים</td><td>4,606</td><td>92.8%</td></tr>
+            <tr><td>8 חלבונים</td><td>643</td><td>100.0%</td></tr>
+            <tr style="font-weight: bold; background-color: #e9eef4;">
+                <td>סה"כ</td><td>78,737</td><td>67.8% (ממוצע כולל)</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+ENV/
+
+# Data files (Strictly avoid committing large/raw data per instructions)
+*.xlsx
+*.xls
+*.csv
+*.tsv
+*.pkl
+*.pickle
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# Binaries & Media
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.lnk
+*.url
+
+# Project Data Directories
+all patients (without isotope)/
+All_Tail_Proteins_Tables/
+Data for algorithm evaluation/
+Tails/
+Archive_Old_Project/Old_Directories/
+Archive_Old_Project/Old_Docs/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
