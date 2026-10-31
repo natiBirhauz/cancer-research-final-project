@@ -6,6 +6,10 @@ A computational framework and interactive Web GUI for analyzing cellular heterog
 
 ## ⚡ Quick Start: Running the Web GUI
 
+### Option A: 1-Click Launcher (Windows)
+Simply double-click `Launch_GUI.bat` in the project root folder. The browser will open automatically at `http://127.0.0.1:7860`.
+
+### Option B: Command Line (Cross-Platform)
 ```bash
 # 1. Clone the repository
 git clone https://github.com/natiBirhauz/cancer-research-final-project.git
@@ -106,6 +110,7 @@ Every execution produces 4 standardized deliverables and a consolidated download
 
 ```text
 cancer-research-final-project/
+├── Launch_GUI.bat                 # 1-Click launcher for Windows
 ├── run_gui.py                     # Primary launcher for the Web GUI workbench
 ├── web_gui.py                     # Gradio web application interface
 ├── pipeline_engine.py             # Core algorithm engine (mining, set cover, R² evaluation)
