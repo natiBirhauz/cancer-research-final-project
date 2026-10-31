@@ -258,3 +258,4 @@ python run_gui.py --web
 python run_gui.py --desktop
 ```
 * חלון Windows טבעי עם כפתור בחירת תיקייה, סרגלי התקדמות, לשוניות תוצאות, וכפתור לפתיחה ישירה של קובץ האקסל ב-Microsoft Excel.
+

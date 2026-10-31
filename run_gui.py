@@ -1,33 +1,38 @@
 """
 run_gui.py
 ----------
-Unified Entry Point to launch the Cancer Research TME Algorithm Graphical Interface.
+Web GUI Launcher for the Cancer Research TME Surprisal Analysis & 
+Exact Sign Sequence (ES) Mining Platform.
 
 Usage:
-  python run_gui.py          # Launches the modern interactive Web GUI (Default, browser-based)
-  python run_gui.py --web    # Explicitly launches the Web GUI (Gradio)
-  python run_gui.py --desktop# Launches the native Windows Desktop GUI (Tkinter)
+  python run_gui.py          # Launches the interactive browser-based Web GUI
+  python run_gui.py --port 8080 # Custom port (default: 7860)
 """
 
 import sys
 import argparse
+from web_gui import create_web_application
 
 def main():
-    parser = argparse.ArgumentParser(description="Cancer Research Algorithm GUI Launcher")
-    parser.add_argument('--desktop', action='store_true', help="Launch native Tkinter desktop interface")
-    parser.add_argument('--web', action='store_true', help="Launch Gradio web interface (Default)")
-    parser.add_argument('--port', type=int, default=7860, help="Port for web interface (Default: 7860)")
+    parser = argparse.ArgumentParser(description="Cancer Research TME Algorithm Web GUI")
+    parser.add_argument('--port', type=int, default=7860, help="Port to run the web server on (Default: 7860)")
+    parser.add_argument('--host', type=str, default="127.0.0.1", help="Host address (Default: 127.0.0.1)")
+    parser.add_argument('--share', action='store_true', help="Generate a public shareable Gradio link")
     args = parser.parse_args()
 
-    if args.desktop:
-        print("Launching Native Desktop Interface (Tkinter)...")
-        from app_gui import main as run_desktop
-        run_desktop()
-    else:
-        print("Launching Interactive Web Interface (Gradio)...")
-        from web_gui import create_app
-        demo = create_app()
-        demo.launch(server_name="127.0.0.1", server_port=args.port, inbrowser=True)
+    print(f"====================================================================")
+    print(f" Cancer Research TME Algorithm Workbench (Web GUI)")
+    print(f" Server URL: http://{args.host}:{args.port}")
+    print(f" Git Source: https://github.com/natiBirhauz/cancer-research-final-project.git")
+    print(f"====================================================================")
+
+    app = create_web_application()
+    app.launch(
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        inbrowser=True
+    )
 
 if __name__ == '__main__':
     main()

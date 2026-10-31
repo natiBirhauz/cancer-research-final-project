@@ -8,6 +8,11 @@ env/
 venv/
 ENV/
 
+# Temporary / Lock files
+~$*
+*.tmp
+*.temp
+
 # Data files (Strictly avoid committing large/raw data per instructions)
 *.xlsx
 *.xls
