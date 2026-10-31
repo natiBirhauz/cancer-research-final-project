@@ -121,8 +121,3 @@ cancer-research-final-project/
 ├── .gitignore                     # Git exclusion rules
 └── README.md                      # Project documentation
 ```
-
----
-
-## 📄 License & Attribution
-Academic and research use. Developed for advanced computational oncology and multiplexed single-cell tissue analysis.
