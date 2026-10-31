@@ -148,11 +148,11 @@ input, textarea, select {
 
 def execute_pipeline_job(
     uploaded_files,
-    strategy,
     min_len,
     max_len,
     threshold,
     min_rec,
+    strategy="Hybrid Multi-Objective (Variance x Count)",
     progress=gr.Progress(track_tqdm=False)
 ):
     """Executes the pipeline and produces the 4 master deliverables."""
@@ -203,7 +203,7 @@ def execute_pipeline_job(
                     Execution Complete ({summary['duration_sec']} seconds)
                 </h3>
                 <p style="margin: 4px 0 0 0; color: #111111 !important; font-size: 0.9rem;">
-                    Strategy: <strong>{strategy}</strong> | Cutoff: <strong>|G| &ge; {threshold}</strong>
+                    Optimization: <strong>Multi-Objective Hybrid</strong> | Cutoff: <strong>|G| &ge; {threshold}</strong> | Signatures: <strong>Lengths {min_len}&ndash;{max_len}</strong>
                 </p>
             </div>
             
@@ -300,7 +300,7 @@ def build_app():
                         </ul>
                     </li>
                     <li><strong>שלב 2 – טעינת הקבצים:</strong> גרור את קבצי האקסל (או קובץ ZIP המכיל את כל התיקיות) לתיבת ההעלאה מטה. המערכת קוראת את כל הקבצים וממזגת אותם אוטומטית.</li>
-                    <li><strong>שלב 3 – בחירת פרמטרים:</strong> בחר באסטרטגיית העוגן להפקת קבצי המאסטר והגדר את טווח אורכי החתימות הרצוי (אורכי רצף 3 עד 8).</li>
+                    <li><strong>שלב 3 – בחירת פרמטרים:</strong> הגדר את טווח אורכי החתימות הרצוי (אורכי רצף 3 עד 8), את סף החיתוך הביולוגי ואת סף החזרתיות.</li>
                     <li><strong>שלב 4 – הרצה:</strong> לחץ על כפתור <code>▶ Run Algorithm & Generate Deliverables</code>.</li>
                     <li><strong>שלב 5 – הורדת התוצאות:</strong> מיד בסיום יופיעו כפתורי הורדה ל-4 קבצי המאסטר וקובץ ZIP מאוחד.</li>
                 </ol>
@@ -310,14 +310,10 @@ def build_app():
                 </h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; font-size: 0.9rem;">
                     <div style="border: 1px solid #000000; padding: 12px; border-radius: 4px; background: #FFFFFF;">
-                        <strong>Primary Anchor Strategy (אסטרטגיית העוגן):</strong><br>
-                        מגדירה את פונקציית המטרה המתמטית של פותר ה-Set Cover הגרידי עבור קבצי המאסטר:
-                        <ul style="padding-right: 20px; margin: 4px 0;">
-                            <li><strong>Hybrid Multi-Objective:</strong> פונקציית מטרה המאזנת בין שונות קינטית לחזרתיות ביולוגית: Score = Variance x sqrt(Count).</li>
-                            <li><strong>SVD Variance Driver:</strong> בוחרת מודולים הממקסמים את סכום משקלי ה-SVD והשונות הקינטית: Score = Sum of Weights.</li>
-                            <li><strong>Max Frequency:</strong> מתעדפת מודולים שמופיעים במספר הגדול ביותר של וקטורים ללא תלות במשקלם.</li>
-                            <li><strong>Deep Specificity:</strong> מתעדפת קומפלקסים חלבוניים ארוכים וספציפיים (אורכים 5 עד 8).</li>
-                        </ul>
+                        <strong>אופטימיזציה רב-מטרתית מובנית (Multi-Objective Optimization):</strong><br>
+                        האלגוריתם מפעיל באופן אוטומטי את פונקציית המטרה הרב-מטרתית:
+                        <p style="margin: 6px 0; font-weight: bold;">Score = Variance x sqrt(Count)</p>
+                        המאזנת בדיוק רב בין שונות קינטית לחזרתיות ביולוגית רחבה. במקביל, מחושבת השוואה מקיפה של כל 5 אסטרטגיות העוגן בקובץ <code>Anchor_Strategies_Comparison.xlsx</code> ללא צורך בהגדרה ידנית.
                     </div>
                     <div style="border: 1px solid #000000; padding: 12px; border-radius: 4px; background: #FFFFFF;">
                         <strong>פרמטרי החיתוך והקומבינטוריקה:</strong>
@@ -400,18 +396,6 @@ def build_app():
         # -------------------------------------------------------------
         gr.Markdown("### 2. Execution Parameters")
         with gr.Row():
-            strategy_select = gr.Dropdown(
-                label="Primary Anchor Strategy",
-                choices=[
-                    "Hybrid Multi-Objective (Variance x Count)",
-                    "SVD Variance Driver",
-                    "Max Frequency / Universality",
-                    "Deep Specificity",
-                    "Biological Hallmark (Seed Co-expression)"
-                ],
-                value="Hybrid Multi-Objective (Variance x Count)",
-                info="Mathematical objective for greedy Set Cover selection."
-            )
             min_len_input = gr.Slider(minimum=3, maximum=6, value=3, step=1, label="Min Sequence Length")
             max_len_input = gr.Slider(minimum=4, maximum=10, value=8, step=1, label="Max Sequence Length")
 
@@ -443,7 +427,6 @@ def build_app():
             fn=execute_pipeline_job,
             inputs=[
                 upload_input,
-                strategy_select,
                 min_len_input,
                 max_len_input,
                 threshold_input,

@@ -14,7 +14,6 @@ def test_run():
     eval_files = glob.glob('Data for algorithm evaluation/*/data.xlsx')
     res = execute_pipeline_job(
         uploaded_files=eval_files,
-        strategy='Hybrid Multi-Objective (Variance x Count)',
         min_len=3,
         max_len=8,
         threshold=0.05,
