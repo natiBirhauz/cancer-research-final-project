@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title Cancer Research: TME Analysis Platform Launcher
+title Surprisal Analysis (SA) - Minimal ES Discovery Platform
 
 echo ====================================================================
-echo   Cancer Research: TME Surprisal Analysis & ES Platform
+echo   Surprisal Analysis (SA) - Minimal Exact Sign Signatures (ES) Platform
 echo   Connecting to GitHub Repository & Launching Web Workbench
 echo ====================================================================
 echo.

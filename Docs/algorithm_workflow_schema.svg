@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" width="100%" height="100%" style="background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
   <defs>
     <linearGradient id="gradHeader" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#1e3a8a" />
-      <stop offset="100%" stop-color="#3b82f6" />
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e3a8a" />
     </linearGradient>
     <linearGradient id="box1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#eff6ff" />
@@ -28,123 +28,122 @@
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.08" />
     </filter>
     <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
     </marker>
   </defs>
 
   <!-- Title Header -->
   <rect x="30" y="25" width="1040" height="70" rx="12" fill="url(#gradHeader)" filter="url(#shadow)" />
-  <text x="550" y="60" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="bold">Cancer Research TME Algorithm Architecture &amp; Workflow</text>
-  <text x="550" y="82" text-anchor="middle" fill="#93c5fd" font-size="13">Surprisal Analysis &rarr; Tail Extraction &rarr; Canonical ES Mining &rarr; Greedy Set Cover &rarr; Cell-Level R&sup2; Reconstruction</text>
+  <text x="550" y="58" text-anchor="middle" fill="#ffffff" font-size="21" font-weight="bold">Surprisal Analysis (SA) &ndash; Minimal Exact Sign Signatures (ES) Platform</text>
+  <text x="550" y="82" text-anchor="middle" fill="#93c5fd" font-size="13">SA Datasets Ingestion &rarr; Dual-Mode ES Mining &rarr; Zero-Contradiction Matching &rarr; Greedy Set Cover &rarr; R&sup2; Fidelity</text>
 
-  <!-- STEP 1: Surprisal Analysis & Input Data -->
+  <!-- STEP 1: Surprisal Analysis & Input Datasets -->
   <g transform="translate(50, 120)">
     <rect width="290" height="200" rx="10" fill="url(#box1)" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)" />
     <rect x="0" y="0" width="290" height="36" rx="10" fill="#2563eb" />
-    <text x="145" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 1: Surprisal Analysis</text>
+    <text x="145" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 1: Surprisal Analysis (SA)</text>
     
-    <text x="15" y="60" font-weight="bold" fill="#1e3a8a" font-size="13">&bull; Raw Cellular Expressions (X)</text>
-    <text x="25" y="80" fill="#334155" font-size="12">IMC Data: 120 ROIs / 48k Cells</text>
+    <text x="15" y="60" font-weight="bold" fill="#1e3a8a" font-size="13">&bull; Collection of SA Datasets (X)</text>
+    <text x="25" y="80" fill="#334155" font-size="12">Shared Genes / Proteins Across Datasets</text>
     
-    <text x="15" y="110" font-weight="bold" fill="#1e3a8a" font-size="13">&bull; Thermodynamic SVD Decomposition:</text>
+    <text x="15" y="110" font-weight="bold" fill="#1e3a8a" font-size="13">&bull; Thermodynamic Decomposition:</text>
     <text x="25" y="130" fill="#0369a1" font-family="monospace" font-size="12">ln(X) = G &times; L<tspan baseline-shift="super" font-size="9">T</tspan></text>
-    <text x="25" y="150" fill="#475569" font-size="11">- G: Biological Process Vectors</text>
-    <text x="25" y="168" fill="#475569" font-size="11">- L: Single-Cell Amplitude Weights</text>
+    <text x="25" y="150" fill="#475569" font-size="11">- G: Process Feature Vectors (G1..Gk)</text>
+    <text x="25" y="168" fill="#475569" font-size="11">- L: Sample / Cell Amplitude Weights</text>
     <text x="25" y="186" fill="#059669" font-size="11">&check; Variance Weights: w(g) = ||L<tspan font-size="9">k</tspan>||&sup2; / &Sigma;||L||&sup2;</text>
   </g>
 
   <!-- Arrow 1 to 2 -->
-  <line x1="340" y1="220" x2="400" y2="220" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrow)" />
+  <line x1="340" y1="220" x2="400" y2="220" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)" />
 
-  <!-- STEP 2: Tail Extraction & Canonical ES Mining -->
+  <!-- STEP 2: Tail Extraction & Dual-Mode Canonical ES Mining -->
   <g transform="translate(410, 120)">
     <rect width="300" height="200" rx="10" fill="url(#box2)" stroke="#a855f7" stroke-width="2" filter="url(#shadow)" />
     <rect x="0" y="0" width="300" height="36" rx="10" fill="#9333ea" />
-    <text x="150" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 2: Tails &amp; ES Mining</text>
+    <text x="150" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 2: Tails &amp; Scalable ES Mining</text>
     
-    <text x="15" y="60" font-weight="bold" fill="#6b21a8" font-size="13">&bull; Driver Tail Identification:</text>
+    <text x="15" y="60" font-weight="bold" fill="#6b21a8" font-size="13">&bull; Active Tail Identification:</text>
     <text x="25" y="80" fill="#334155" font-size="12">G+: Positive Tails | G-: Negative Tails</text>
     
     <text x="15" y="110" font-weight="bold" fill="#6b21a8" font-size="13">&bull; Canonical Representation:</text>
     <text x="25" y="130" fill="#7e22ce" font-family="monospace" font-size="12">ES &equiv; -ES (Sign-Inversion Invariant)</text>
     
-    <text x="15" y="155" font-weight="bold" fill="#6b21a8" font-size="13">&bull; Combinatorial Subsets (Len 3 to 8):</text>
-    <text x="25" y="175" fill="#334155" font-size="12">Singletons (1 G) vs. Recurring (2+ Gs)</text>
-    <text x="25" y="190" fill="#059669" font-size="11">&check; 120,791 unique combinations mined</text>
+    <text x="15" y="155" font-weight="bold" fill="#6b21a8" font-size="13">&bull; Dual-Mode Candidate Mining:</text>
+    <text x="25" y="173" fill="#334155" font-size="11">Compact Subsets + High-Dim Intersections</text>
+    <text x="25" y="190" fill="#059669" font-size="11">&check; Scales from 10 to 20,000+ genes/proteins</text>
   </g>
 
   <!-- Arrow 2 to 3 -->
-  <line x1="710" y1="220" x2="770" y2="220" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrow)" />
+  <line x1="710" y1="220" x2="770" y2="220" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)" />
 
-  <!-- STEP 3: Biological Compatibility Matching -->
+  <!-- STEP 3: Sign-Consistent Matching -->
   <g transform="translate(780, 120)">
     <rect width="270" height="200" rx="10" fill="url(#box3)" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
     <rect x="0" y="0" width="270" height="36" rx="10" fill="#059669" />
     <text x="135" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 3: Match &amp; Zero Contradictions</text>
     
-    <text x="15" y="60" font-weight="bold" fill="#065f46" font-size="13">&bull; Common Overlap &ge; 2 Proteins</text>
-    <text x="25" y="80" fill="#334155" font-size="12">Common = Prots(ES) &cap; Prots(G)</text>
+    <text x="15" y="60" font-weight="bold" fill="#065f46" font-size="13">&bull; Shared Feature Overlap</text>
+    <text x="25" y="80" fill="#334155" font-size="12">Common = Features(ES) &cap; Features(G)</text>
     
     <text x="15" y="110" font-weight="bold" fill="#065f46" font-size="13">&bull; Direct Match (+):</text>
-    <text x="25" y="128" fill="#334155" font-size="12">All common proteins share exact signs</text>
+    <text x="25" y="128" fill="#334155" font-size="12">All shared features have identical signs</text>
     
     <text x="15" y="150" font-weight="bold" fill="#065f46" font-size="13">&bull; Inverse Match (-):</text>
-    <text x="25" y="168" fill="#334155" font-size="12">All common proteins share opposite signs</text>
+    <text x="25" y="168" fill="#334155" font-size="12">All shared features have opposite signs</text>
     
-    <text x="15" y="190" font-weight="bold" fill="#b91c1c" font-size="12">&cross; Zero Contradictions: Strict rejection!</text>
+    <text x="15" y="190" font-weight="bold" fill="#b91c1c" font-size="12">&cross; Zero Contradictions: Strict rejection</text>
   </g>
 
-  <!-- Downward Arrows from Stage 3 and Stage 2 to Stage 4 -->
-  <path d="M 915 320 L 915 380 L 560 380 L 560 410" fill="none" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrow)" />
+  <!-- Downward Arrow from Stage 3 to Stage 4 -->
+  <path d="M 915 320 L 915 380 L 560 380 L 560 410" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)" />
 
   <!-- STEP 4: Greedy Multi-Objective Optimization -->
   <g transform="translate(200, 420)">
     <rect width="700" height="170" rx="10" fill="url(#box4)" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)" />
     <rect x="0" y="0" width="700" height="36" rx="10" fill="#d97706" />
-    <text x="350" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 4: Greedy Optimization &amp; Disjoint Allocation (The Hybrid Winner)</text>
+    <text x="350" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 4: Multi-Objective Greedy Set Cover &amp; Disjoint Allocation</text>
     
     <text x="20" y="65" font-weight="bold" fill="#92400e" font-size="14">&bull; Multi-Objective Scoring Function:</text>
     <rect x="25" y="75" width="380" height="35" rx="6" fill="#fef3c7" stroke="#b45309" />
     <text x="35" y="98" fill="#78350f" font-family="monospace" font-size="14" font-weight="bold">Score(ES) = [&Sigma; w(g)] &times; &radic;(New_G_Count)</text>
     
-    <text x="430" y="65" font-weight="bold" fill="#92400e" font-size="13">&bull; 6 Anchor Strategies Evaluated:</text>
+    <text x="430" y="65" font-weight="bold" fill="#92400e" font-size="13">&bull; 5 Anchor Objectives Compared:</text>
     <text x="440" y="85" fill="#334155" font-size="12">1. SVD Variance | 2. Max Frequency</text>
-    <text x="440" y="102" fill="#334155" font-size="12">3. Deep Specificity | 4. Immune Seed</text>
-    <text x="440" y="119" fill="#334155" font-size="12">5. Stroma Seed | 6. Hybrid Model (&star;)</text>
+    <text x="440" y="102" fill="#334155" font-size="12">3. Deep Specificity | 4. Dominant Seed</text>
+    <text x="440" y="119" fill="#334155" font-size="12">5. Hybrid Multi-Objective</text>
 
     <text x="20" y="135" font-weight="bold" fill="#92400e" font-size="13">&bull; Disjoint G-Allocation Rule:</text>
-    <text x="30" y="152" fill="#334155" font-size="12">Every covered G-vector is locked to a single ES module &rarr; 100% Disjoint (0 G Duplicates)</text>
+    <text x="30" y="152" fill="#334155" font-size="12">Every covered G-vector is assigned to a single primary ES signature &rarr; 100% Disjoint (0 Duplicates)</text>
   </g>
 
   <!-- Downward Arrow from Stage 4 to Stage 5 -->
-  <line x1="550" y1="590" x2="550" y2="640" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrow)" />
+  <line x1="550" y1="590" x2="550" y2="640" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)" />
 
-  <!-- STEP 5: Conflict-Free Matrix & Single-Cell R2 Reconstruction -->
+  <!-- STEP 5: Conflict-Free Matrix & R2 Reconstruction -->
   <g transform="translate(100, 650)">
     <rect width="900" height="160" rx="10" fill="url(#box5)" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
     <rect x="0" y="0" width="900" height="36" rx="10" fill="#047857" />
-    <text x="450" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 5: Conflict-Free Matrix &amp; Cell-Level R&sup2; Validation Deliverables</text>
+    <text x="450" y="24" text-anchor="middle" fill="#ffffff" font-weight="bold" font-size="14">Stage 5: Conflict-Free Matrix, Visual Heatmap &amp; R&sup2; Fidelity Deliverables</text>
     
     <g transform="translate(25, 50)">
-      <text x="0" y="15" font-weight="bold" fill="#065f46" font-size="13">&bull; Conflict-Free 120 ROIs &times; 32 ES Matrix:</text>
-      <text x="10" y="35" fill="#334155" font-size="12">- Max 1 G per ROI per ES column</text>
-      <text x="10" y="52" fill="#334155" font-size="12">- 0 Row Duplicates across all 120 samples</text>
-      <text x="10" y="70" fill="#334155" font-size="12">- Clean entries: e.g. G12(+) or G5(-)</text>
+      <text x="0" y="15" font-weight="bold" fill="#065f46" font-size="13">&bull; Conflict-Free Datasets &times; ES Matrix:</text>
+      <text x="10" y="35" fill="#334155" font-size="12">- Max 1 G per Dataset per ES column</text>
+      <text x="10" y="52" fill="#334155" font-size="12">- Zero intra-row duplicates across datasets</text>
+      <text x="10" y="70" fill="#334155" font-size="12">- Directional entries: e.g. G1(+) or G2(-)</text>
     </g>
 
     <g transform="translate(320, 50)">
-      <text x="0" y="15" font-weight="bold" fill="#065f46" font-size="13">&bull; Cell-Level R&sup2; Metric Formulation:</text>
+      <text x="0" y="15" font-weight="bold" fill="#065f46" font-size="13">&bull; R&sup2; Reconstruction Formulation:</text>
       <text x="10" y="35" fill="#047857" font-family="monospace" font-size="12">R&sup2;<tspan font-size="9">full</tspan> = 1 - [&Sigma;(X - X_hat<tspan font-size="9">full</tspan>)&sup2;] / SS_tot</text>
       <text x="10" y="52" fill="#047857" font-family="monospace" font-size="12">R&sup2;<tspan font-size="9">optimal</tspan> = 1 - [&Sigma;(X - X_hat<tspan font-size="9">selected</tspan>)&sup2;] / SS_tot</text>
-      <text x="10" y="70" fill="#b91c1c" font-family="monospace" font-size="12">&Delta;R&sup2; = R&sup2;<tspan font-size="9">full</tspan> - R&sup2;<tspan font-size="9">optimal</tspan> (Compression Cost)</text>
+      <text x="10" y="70" fill="#b91c1c" font-family="monospace" font-size="12">&Delta;R&sup2; = R&sup2;<tspan font-size="9">full</tspan> - R&sup2;<tspan font-size="9">optimal</tspan> (Compression Loss)</text>
     </g>
 
     <g transform="translate(640, 50)">
-      <text x="0" y="15" font-weight="bold" fill="#065f46" font-size="13">&bull; Master Deliverables:</text>
-      <text x="10" y="35" fill="#1e3a8a" font-size="12">&bull; Docs/Optimal_ES_Result_Signs_R2.xlsx</text>
-      <text x="10" y="52" fill="#1e3a8a" font-size="12">&bull; Docs/Evaluation_Datasets_Report.xlsx</text>
-      <text x="10" y="70" fill="#1e3a8a" font-size="12">&bull; Interactive Web &amp; Desktop GUI</text>
+      <text x="0" y="15" font-weight="bold" fill="#065f46" font-size="13">&bull; Streamlined Deliverables:</text>
+      <text x="10" y="35" fill="#1e3a8a" font-size="12">&bull; Optimal_ES_Result.xlsx (5 Sheets)</text>
+      <text x="10" y="52" fill="#1e3a8a" font-size="12">&bull; Analysis_Summary_Report.html</text>
+      <text x="10" y="70" fill="#1e3a8a" font-size="12">&bull; Anchor_Strategies_Comparison.xlsx</text>
     </g>
   </g>
 </svg>
-
