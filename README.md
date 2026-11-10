@@ -51,6 +51,42 @@ Open your browser at `http://127.0.0.1:7860`.
 
 ---
 
+## 📸 Platform Interface & Visual Walkthrough
+
+Below are high-resolution screenshots illustrating the end-to-end user experience in both English and Hebrew, from platform introduction to interactive visualization and downloadable results.
+
+### Step 1: Platform Overview, Visual Illustration & Guidelines
+The initial screen introduces the platform's biological and mathematical rationale, supported input formats, interactive methodology diagram, sample template downloads, and the **Start Analysis →** trigger.
+
+| English View | Hebrew View (עברית) |
+| :---: | :---: |
+| ![Step 1 Overview English](Docs/screenshots/01_step1_overview_en.png) | ![Step 1 Overview Hebrew](Docs/screenshots/02_step1_overview_he.png) |
+
+---
+
+### Step 2: Automatic Pre-Flight Dataset Inspection & Execution Parameters
+Upon uploading datasets, the workbench runs an immediate pre-flight scan—displaying detected datasets, G-vectors, unique/shared genes, tail distributions, and estimated run time. Every execution parameter includes an interactive `ⓘ` tooltip.
+
+| English Pre-Flight & Parameters | Hebrew Pre-Flight & Parameters (עברית) |
+| :---: | :---: |
+| ![Step 2 Pre-Check English](Docs/screenshots/03_step2_precheck_en.png) | ![Step 2 Pre-Check Hebrew](Docs/screenshots/04_step2_precheck_he.png) |
+
+---
+
+### Step 2 Results: Interactive Visualizations, Conflict-Free Heatmap & Deliverables
+After executing the greedy algorithm, the results panel presents KPI summary cards (Universe Coverage, Kinetic Variance, Mean Optimal $R^2$, Compression Loss $\Delta R^2$, High Fidelity Rate), an interactive **ES Bar & Cumulative Coverage Chart**, a color-coded **Conflict-Free Allocation Heatmap**, and direct download links for the unified Excel workbook and visual HTML summary report.
+
+![Step 2 Results Visual Charts and Heatmap](Docs/screenshots/05_step2_results_visual_charts_en.png)
+
+---
+
+### Step 2 Results: Interactive Data Tables
+Users can interactively inspect, search, and sort all underlying tables directly within the browser, including `Optimal_ES_SetCover`, `Per_Dataset_Coverage_and_R2`, and `ES_Conflict_Free_Matrix`.
+
+![Step 2 Results Interactive Data Tables](Docs/screenshots/06_step2_results_tables_en.png)
+
+---
+
 ## 📂 Supported Input Formats
 
 Upload `.xlsx` / `.xls` files or a `.zip` archive containing multiple dataset folders:

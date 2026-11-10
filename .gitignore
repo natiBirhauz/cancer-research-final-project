@@ -32,7 +32,6 @@ test_output_gui/
 !Sample_Input_Template.xlsx
 !Docs/Sample_Input_Template.xlsx
 !Docs/Deliverables_Data_Dictionary.xlsx
-
 # Binary and Media
 *.exe
 *.dll
@@ -47,6 +46,10 @@ test_output_gui/
 *.url
 *.docx
 *.html
+
+# Whitelist screenshots
+!Docs/screenshots/
+!Docs/screenshots/*.png
 
 # Specific Data Directories & Obsolete Folders
 all patients (without isotope)/
